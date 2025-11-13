@@ -1,4 +1,8 @@
+import { mat4, vec3 } from "gl-matrix";
 import { createShaderProgram } from "./shader.js";
+import 'gl-matrix'
+
+
 
 main();
 
@@ -16,12 +20,35 @@ async function main() {
   const shaderProgram = await createShaderProgram(gl, "shaders/basic.vert", "shaders/basic.frag");
   const aPosLocation = gl.getAttribLocation(shaderProgram, "a_position");
   const aColorLocation = gl.getAttribLocation(shaderProgram, "a_color");
-  
+
+
   const vertices = new Float32Array([
      0.0,  1.0, 1.0, 0.0, 0.0,
      1.0, -1.0, 0.0, 1.0, 0.0, 
     -1.0, -1.0, 0.0, 0.0, 1.0
   ]);
+
+  // Create Camera 
+
+  const cameraPosition = vec3.fromValues(0.0, 0.0, 3.0);
+  const cameraTarget = vec3.fromValues(0.0, 0.0, 0.0);
+
+  const cameraDirection = vec3.create();
+  vec3.subtract(cameraDirection, cameraPosition, cameraTarget);
+  vec3.normalize(cameraDirection);
+
+  const worldUp = vec3.fromValues(0.0, 1.0, 0.0);
+
+  const cameraRight = vec3.create();
+  vec3.cross(cameraRight, worldUp, cameraDirection);
+  vec3.normalize(cameraRight);
+
+  const cameraUp = vec3.create();
+  vec3.cross(cameraUp, cameraDirection, cameraRight);
+  vec3.normalize(cameraUp);
+
+  const view = mat4.create();
+  mat4.lookAt(view, cameraPosition, cameraTarget, worldUp);
 
   // Create Vertex buffer object
   const vbo = gl.createBuffer();

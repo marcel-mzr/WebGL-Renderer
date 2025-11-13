@@ -23,5 +23,8 @@
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "typescript-eslint": "^8.46.4"
+  },
+  "dependencies": {
+    "gl-matrix": "^3.4.4"
   }
 }
