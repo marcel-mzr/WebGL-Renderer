@@ -1,7 +1,5 @@
 import { mat4, vec3 } from "gl-matrix";
-import { createShaderProgram } from "./shader.js";
-import 'gl-matrix'
-
+import { Shader } from "./shader.js";
 
 
 main();
@@ -17,9 +15,14 @@ async function main() {
     return;
   }
 
-  const shaderProgram = await createShaderProgram(gl, "shaders/basic.vert", "shaders/basic.frag");
-  const aPosLocation = gl.getAttribLocation(shaderProgram, "a_position");
-  const aColorLocation = gl.getAttribLocation(shaderProgram, "a_color");
+  /** @type {Shader} */
+  const basicShader = new Shader(gl, "shaders/basic.vert", "shaders/basic.frag");
+  await basicShader.init();
+
+
+  //const shaderProgram = await createShaderProgram(gl, "shaders/basic.vert", "shaders/basic.frag");
+  const aPosLocation = gl.getAttribLocation(basicShader.program, "a_position");
+  const aColorLocation = gl.getAttribLocation(basicShader.program, "a_color");
 
 
   const vertices = new Float32Array([
@@ -29,26 +32,35 @@ async function main() {
   ]);
 
   // Create Camera 
-
-  const cameraPosition = vec3.fromValues(0.0, 0.0, 3.0);
+  const cameraPosition = vec3.fromValues(0.0, 0.0, 5.0);
   const cameraTarget = vec3.fromValues(0.0, 0.0, 0.0);
 
-  const cameraDirection = vec3.create();
+  var cameraDirection = vec3.create();
   vec3.subtract(cameraDirection, cameraPosition, cameraTarget);
-  vec3.normalize(cameraDirection);
+  vec3.normalize(cameraDirection, cameraDirection);
 
   const worldUp = vec3.fromValues(0.0, 1.0, 0.0);
 
-  const cameraRight = vec3.create();
+  var cameraRight = vec3.create();
   vec3.cross(cameraRight, worldUp, cameraDirection);
-  vec3.normalize(cameraRight);
+  vec3.normalize(cameraRight, cameraRight);
 
-  const cameraUp = vec3.create();
+  var cameraUp = vec3.create();
   vec3.cross(cameraUp, cameraDirection, cameraRight);
-  vec3.normalize(cameraUp);
+  vec3.normalize(cameraUp, cameraUp);
 
-  const view = mat4.create();
+  var view = mat4.create();
   mat4.lookAt(view, cameraPosition, cameraTarget, worldUp);
+
+
+  const fov = 45 * Math.PI / 180;
+  const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+  var projection = mat4.create();
+  mat4.perspective(projection, fov, aspect, 0.1, 100);
+
+  var MVP = mat4.create();
+  mat4.multiply(MVP, projection, view);
+
 
   // Create Vertex buffer object
   const vbo = gl.createBuffer();
@@ -64,7 +76,8 @@ async function main() {
     gl.clearColor(0.7, 0.7, 0.7, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT)
 
-    gl.useProgram(shaderProgram);
+    basicShader.use();
+    basicShader.setMat4("MVP", MVP);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     // Enable and set position
