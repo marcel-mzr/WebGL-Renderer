@@ -1,17 +1,17 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 
-in vec3 a_position;
-in vec3 a_color;
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec2 a_uv;
 
-out vec3 color;
+out vec3 normal;
+out vec2 uv;
 
 uniform mat4 MVP;
 
 void main() {
-  color = a_color;
-
-  vec4 obj_space_pos = vec4(a_position, 1.0); 
-
-  gl_Position = MVP * obj_space_pos;
+  normal = a_normal;
+  uv = a_uv;
+  gl_Position = MVP * vec4(a_position, 1.0);
 }

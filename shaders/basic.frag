@@ -1,10 +1,15 @@
 #version 300 es
-precision mediump float;
+precision highp float;
 
-in vec3 color;
+in vec3 normal;
+in vec2 uv;
 
 out vec4 outColor;
 
+uniform sampler2D diffuse_texture;
+uniform sampler2D specular_texture;
+
+
 void main() {
-  outColor = vec4(color, 1.0);
+  outColor = texture(diffuse_texture, uv);
 }

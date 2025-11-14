@@ -200,8 +200,6 @@ export class Camera {
     this.distance = Math.max(this.minDistance, this.distance);
 
     this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
-
-    console.log(event.deltaY);
   }
 
 }
