@@ -1,7 +1,13 @@
 import { vec3, mat4 } from "gl-matrix";
+import { InputHandler } from "./input";
 
 export class Camera {
 
+  /**
+   * 
+   * @param {InputHandler} inputHandler 
+   * @param {*} aspectRatio 
+   */
   constructor(inputHandler, aspectRatio) {
     this.aspectRatio = aspectRatio;
     this.inputHandler = inputHandler;
@@ -55,8 +61,26 @@ export class Camera {
 
     this.azimuth = Math.PI / 2;
     this.zenith = Math.PI / 2;
+    this.distance = 5.0;
 
-    this.calculateCameraParameters(this.azimuth, this.zenith, 5.0) 
+    // Camera restrictions
+    this.minZenith = 0.01;
+    this.maxZenith = Math.PI - this.minZenith;
+    this.minDistance = 0.0;
+    this.maxDistance = 100.0;
+
+
+    this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
+    this.registerCallbacks();
+
+    // Mouse parameters
+    this.mouseSpeed = 0.01;
+    this.mouseDown = false;
+    this.mouseDownX = 0;
+    this.mouseDownY = 0;
+
+    // Wheel parameters
+    this.wheelSpeed = 0.003;
   }
 
   /**
@@ -65,16 +89,14 @@ export class Camera {
    * @param {number} zenith - The zenith angle in radians
    * @param {number} distance - The distance to the cameras taget
    */
-  calculateCameraParameters(azimuth, zenith, distance) {
-    this.distance = distance;
-    this.azimuth = azimuth;
-    this.zenith = zenith;
+  updateCameraParameters(azimuth, zenith, distance) {
+
 
     // (Re-)calculate camera position
     vec3.set(this.cameraPosition, 
-      this.cameraTarget[0] + this.distance * Math.sin(zenith) * Math.cos(azimuth),
-      this.cameraTarget[1] + this.distance * Math.cos(zenith),
-      this.cameraTarget[2] + this.distance * Math.sin(zenith) * Math.sin(azimuth)
+      this.cameraTarget[0] + distance * Math.sin(zenith) * Math.cos(azimuth),
+      this.cameraTarget[1] + distance * Math.cos(zenith),
+      this.cameraTarget[2] + distance * Math.sin(zenith) * Math.sin(azimuth)
     );
 
     // console.log(`Camera Position: [${this.cameraPosition[0]}, ${this.cameraPosition[1]}, ${this.cameraPosition[2]}]`);
@@ -98,6 +120,88 @@ export class Camera {
 
   getViewProjectionMatrix() {
     return this.viewProjection;
+  }
+
+  registerCallbacks() {
+    this.inputHandler.subscribe("pointerup", (event) => this.onPointerUp(event));
+    this.inputHandler.subscribe("pointerdown", (event) => this.onPointerDown(event));
+    this.inputHandler.subscribe("pointermove", (event) => this.onPointerMove(event));
+    this.inputHandler.subscribe("pointercancel", (event) => this.onPointerCancel(event));
+    this.inputHandler.subscribe("wheel", (event) => this.onWheel(event));
+  }
+
+  /**
+   * pointerup callback
+   * @param {PointerEvent} event 
+   */
+  onPointerUp(event) {
+    this.mouseDown = false;
+
+    const deltaX = event.clientX - this.mouseDownX;
+    const deltaY = event.clientY - this.mouseDownY;
+
+    this.azimuth = this.azimuth + deltaX * this.mouseSpeed;
+    this.zenith = this.zenith - deltaY * this.mouseSpeed;
+
+    this.zenith = Math.max(this.minZenith, this.zenith);
+    this.zenith = Math.min(this.maxZenith, this.zenith);
+
+    this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
+  }
+
+  /**
+   * pointerdown callback
+   * @param {PointerEvent} event 
+   */
+  onPointerDown(event) {
+    this.mouseDownX = event.clientX;
+    this.mouseDownY = event.clientY;
+    this.mouseDown = true;
+  }
+
+  /**
+   * pointermove callback
+   * @param {PointerEvent} event 
+   */
+  onPointerMove(event) {
+    if (!this.mouseDown) return;
+
+    const deltaX = event.clientX - this.mouseDownX;
+    const deltaY = event.clientY - this.mouseDownY;
+
+    var azimuth = this.azimuth + deltaX * this.mouseSpeed;
+    var zenith = this.zenith - deltaY * this.mouseSpeed;
+
+    zenith = Math.max(this.minZenith, zenith);
+    zenith = Math.min(this.maxZenith, zenith);
+
+
+    this.updateCameraParameters(azimuth, zenith, this.distance);
+  }
+
+  /**
+   * pointercancel callback
+   * @param {PointerEvent} event 
+   */
+  onPointerCancel(event) {
+    this.mouseDown = false;
+    this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
+  }
+
+  /**
+   * wheel callback
+   * @param {WheelEvent} event 
+   */
+  onWheel(event) {
+
+    this.distance = this.distance + event.deltaY * this.wheelSpeed;
+
+    this.distance = Math.min(this.maxDistance, this.distance);
+    this.distance = Math.max(this.minDistance, this.distance);
+
+    this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
+
+    console.log(event.deltaY);
   }
 
 }

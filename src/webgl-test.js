@@ -1,4 +1,3 @@
-import { mat4, vec3 } from "gl-matrix";
 import { Shader } from "./shader.js";
 import {InputHandler} from "./input.js";
 import { Camera } from "./camera.js";
@@ -70,26 +69,8 @@ async function main() {
     -0.5,  0.5, -0.5,  0.0, 1.0, 0.0,
   ]);
 
-  // Input system
   const inputHandler = new InputHandler(canvas);
-  /*
-  inputHandler.subscribe("pointermove", (event) => {
-    console.log("pointermove");
-  });
-
-  inputHandler.subscribe("pointerup", (event) => {
-    console.log("pointerup");
-  });
-
-  inputHandler.subscribe("pointerdown", (event) => {
-    console.log("pointerdown");
-  });
-
-  inputHandler.subscribe("pointercancel", (event) => {
-    console.log("pointercancel");
-  });
-  */
-  // Create Camera 
+  
   const aspectRatio = gl.canvas.clientWidth / gl.canvas.clientHeight;
   const camera = new Camera(inputHandler, aspectRatio);
 
@@ -106,7 +87,7 @@ async function main() {
   const colorOffset = 3 * FLOAT_SIZE;
   gl.enable(gl.DEPTH_TEST);
 
-  function render(time) {
+  function render() {
     gl.clearColor(0.7, 0.7, 0.7, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -123,8 +104,8 @@ async function main() {
 
     gl.drawArrays(gl.TRIANGLES, 0, 36);
 
+    // camera.updateCameraParameters(time * 0.001, time * 0.0005, camera.distance);
     requestAnimationFrame(render);
-    camera.calculateCameraParameters(time * 0.001, time * 0.0005, camera.distance);
   }
 
   requestAnimationFrame(render);
