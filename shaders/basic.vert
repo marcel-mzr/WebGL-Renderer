@@ -13,10 +13,11 @@ uniform mat4 VP;
 uniform mat4 M;
 
 void main() {
-  normal = a_normal;
   uv = a_uv;
-  position = a_position;
   
+  normal = (transpose(inverse(M)) * vec4(a_normal, 0.0)).xyz;
+  position = (M * vec4(a_position, 1.0)).xyz;
+
   mat4 MVP = VP * M;
   gl_Position = MVP * vec4(a_position, 1.0);
 }

@@ -91,13 +91,16 @@ export class SimpleMesh {
   draw(shader) {
     // Input diffuse texture
     this.gl.activeTexture(this.gl.TEXTURE0);
-    shader.setInt("diffuse_texture", 0);
+    shader.setInt("material.diffuse", 0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.diffuseTexture);
 
     // Input specular texture
     this.gl.activeTexture(this.gl.TEXTURE1);
-    shader.setInt("specular_texture", 1);
+    shader.setInt("material.specular", 1);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.specularTexture);
+
+    // Input shininess
+    shader.setFloat("material.shininess", 32.0);
 
     // Set model matrix
     shader.setMat4("M", this.modelMatrix);

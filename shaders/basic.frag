@@ -1,35 +1,42 @@
 #version 300 es
 precision highp float;
 
+struct Material {
+  sampler2D diffuse;
+  sampler2D specular;
+  float shininess;
+};
+
+struct Light {
+  vec3 position;
+  vec3 ambient;
+  vec3 diffuse;
+  vec3 specular;
+}; 
+
 in vec3 normal;
 in vec2 uv;
 in vec3 position;
 
 out vec4 outColor;
 
-uniform sampler2D diffuse_texture;
-uniform sampler2D specular_texture;
+uniform Light light;
+uniform Material material;
 
-uniform vec3 light_position;
 uniform vec3 camera_position;
 
 void main() {
   vec3 N = normalize(normal);
 
-  vec3 light_color = vec3(1.0, 1.0, 1.0);
-  float ambient_strength = 0.1;
-  vec3 ambient = ambient_strength * light_color;
-
-  vec3 light_direction = normalize(light_position - position);
-  vec3 diffuse = max(dot(N, light_direction), 0.0) * light_color;
-
+  vec3 diffuse_mat_color = texture(material.diffuse, uv).rgb;
+  vec3 specular_mat_color = texture(material.specular, uv).rgb;
+  vec3 light_direction = normalize(light.position - position);
   vec3 camera_direction = normalize(camera_position - position);
-  vec3 reflected_direction = reflect(-light_direction, N);
+  vec3 R = reflect(-light_direction, N);
 
-  float specular_strength = 1.0;
-  vec3 specular = pow(max(dot(camera_direction, reflected_direction), 0.0), 32.0) * specular_strength * light_color;
+  vec3 ambient_contrib = diffuse_mat_color * light.ambient;
+  vec3 diffuse_contrib = max(dot(N, light_direction), 0.0) * light.diffuse * diffuse_mat_color;
+  vec3 specular_contrib = pow(max(dot(camera_direction, R), 0.0), material.shininess) * light.specular * specular_mat_color;
 
-  vec3 albedo = texture(diffuse_texture, uv).rgb;
-
-  outColor = vec4(albedo * (ambient + diffuse + specular), 1.0);
+  outColor = vec4(ambient_contrib + diffuse_contrib + specular_contrib, 1.0);
 }
