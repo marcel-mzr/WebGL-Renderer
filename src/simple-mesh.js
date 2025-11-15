@@ -1,4 +1,4 @@
-import { vec2, vec3 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import { Shader } from "./shader";
 
 export class SimpleMesh {
@@ -19,6 +19,12 @@ export class SimpleMesh {
     this.vertexCount = vertices.length / 8;
     this.diffuseTexturePath = diffuseTexturePath;
     this.specularTexturePath = specularTexturePath;
+
+    this.position = vec3.fromValues(0.0, 0.0, 0.0);
+    this.scale = vec3.fromValues(1.0, 1.0, 1.0);
+    this.modelMatrix = mat4.create();
+
+    this.updateModelMatrix();
   }
 
   async load() {
@@ -93,9 +99,47 @@ export class SimpleMesh {
     shader.setInt("specular_texture", 1);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.specularTexture);
 
+    // Set model matrix
+    shader.setMat4("M", this.modelMatrix);
+
     // Draw the mesh
     this.gl.bindVertexArray(this.vao);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, this.vertexCount);
     this.gl.bindVertexArray(null);
+  }
+
+  /**
+   * Sets the position and updates the model matrix
+   * @param {vec3} position 
+   */
+  setPosition(position) {
+    this.position = position;
+    this.updateModelMatrix();
+  }
+
+  /**
+   * Sets the scale and updates the model matrix
+   * @param {vec3} scale 
+   */
+  setScale(scale) {
+    this.scale = scale;
+    this.updateModelMatrix();
+  }
+
+  /**
+   * Recalculates the model matrix
+   */
+  updateModelMatrix() {
+    mat4.identity(this.modelMatrix);
+    mat4.translate(this.modelMatrix, this.modelMatrix, this.position);
+    mat4.scale(this.modelMatrix, this.modelMatrix, this.scale);
+  }
+
+  /**
+   * 
+   * @returns {mat4} The model transform of the mesh
+   */
+  getModelMatrix() {
+    return this.modelMatrix;
   }
 }

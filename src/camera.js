@@ -1,5 +1,5 @@
 import { vec3, mat4 } from "gl-matrix";
-import { InputHandler } from "./input";
+import { InputHandler } from "./input.js";
 
 export class Camera {
 
@@ -128,6 +128,14 @@ export class Camera {
     this.inputHandler.subscribe("pointermove", (event) => this.onPointerMove(event));
     this.inputHandler.subscribe("pointercancel", (event) => this.onPointerCancel(event));
     this.inputHandler.subscribe("wheel", (event) => this.onWheel(event));
+  }
+
+  /**
+   * 
+   * @returns {vec3} the position of the camera
+   */
+  getPosition() {
+    return this.cameraPosition;
   }
 
   /**
