@@ -86,11 +86,14 @@ async function main() {
 
 
   // const model = new Model(gl, "assets/whimsical_enchanted_forest_cottage/scene.gltf");
-  // const model = new Model(gl, "assets/survival_guitar_backpack/scene.gltf");
-  const model = new Model(gl, "assets/porsche_911_gt3_r_no_interior/scene.gltf");
+  const model = new Model(gl, "assets/survival_guitar_backpack/scene.gltf");
+  // const model = new Model(gl, "assets/porsche_911_gt3_r_no_interior/scene.gltf");
   await model.load();
-
+  /*
   const skybox = new Skybox(gl, "assets/storforsen2_skybox");
+  await skybox.load();
+  */
+  const skybox = new Skybox(gl, "assets/fishermans_bastion_skybox");
   await skybox.load();
 
   const rendererController = new RendererController(model);
@@ -118,7 +121,7 @@ async function main() {
   gl.enable(gl.DEPTH_TEST);
 
   function render() {
-    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     var VP = camera.getViewProjectionMatrix();
@@ -145,6 +148,8 @@ async function main() {
     lightMesh.draw(lightShader);
 
     skyboxShader.use(); 
+    skyboxShader.setMat4("V", camera.getViewMatrix())
+    skyboxShader.setMat4("P", camera.getProjectionMatrix())
     skyboxShader.setMat4("VP", VP);
     skybox.draw(skyboxShader);
     

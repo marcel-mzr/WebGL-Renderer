@@ -34,8 +34,8 @@ export class Skybox {
     // Setup textures
     this.cubemap = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.cubemap);
-
-    const FACE_NAMES = ["posx", "negx", "posy", "negy", "posz", "negz"];
+    
+    const FACE_NAMES = ["posx", "negx", "negy", "posy", "posz", "negz"];
 
     for (let i = 0; i < FACE_NAMES.length; ++i) {
 
@@ -52,7 +52,7 @@ export class Skybox {
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
-
+    
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
 
     // Setup the Vertex Array Object
@@ -75,6 +75,8 @@ export class Skybox {
    * @param {Shader} skyboxShader
    */
   draw(skyboxShader) {
+    this.gl.depthFunc(this.gl.LEQUAL);
+    this.gl.disable(this.gl.CULL_FACE)
     this.gl.depthMask(false);
 
     this.gl.bindVertexArray(this.vao);
@@ -84,6 +86,8 @@ export class Skybox {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 36);
 
     this.gl.depthMask(true);
+    // this.gl.enable(this.gl.CULL_FACE)
+    this.gl.depthFunc(this.gl.LESS);
   }
 
 }

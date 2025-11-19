@@ -122,6 +122,14 @@ export class Camera {
     return this.viewProjection;
   }
 
+  getViewMatrix() {
+    return this.view;
+  }
+
+  getProjectionMatrix() {
+    return this.projection;
+  }
+
   registerCallbacks() {
     this.inputHandler.subscribe("pointerup", (event) => this.onPointerUp(event));
     this.inputHandler.subscribe("pointerdown", (event) => this.onPointerDown(event));
