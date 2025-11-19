@@ -4,6 +4,8 @@ import { Camera } from "./camera.js";
 import { SimpleMesh } from "./simple-mesh.js";
 import {vec3} from "gl-matrix";
 import { Model } from "./model.js";
+import { RendererController } from "./renderer-controller.js";
+import { Skybox } from "./skybox.js";
 
 
 main();
@@ -30,6 +32,10 @@ async function main() {
   /** @type {Shader} */
   const testShader = new Shader(gl, "shaders/test.vert", "shaders/test.frag");
   await testShader.init();
+
+  /** @type {Shader} */
+  const skyboxShader = new Shader(gl, "shaders/skybox.vert", "shaders/skybox.frag");
+  await skyboxShader.init();
 
 
 
@@ -82,6 +88,12 @@ async function main() {
   // const model = new Model(gl, "assets/whimsical_enchanted_forest_cottage/scene.gltf");
   // const model = new Model(gl, "assets/survival_guitar_backpack/scene.gltf");
   const model = new Model(gl, "assets/porsche_911_gt3_r_no_interior/scene.gltf");
+  await model.load();
+
+  const skybox = new Skybox(gl, "assets/storforsen2_skybox");
+  await skybox.load();
+
+  const rendererController = new RendererController(model);
 
   const cubeMesh = new SimpleMesh(gl, vertices, "assets/container_diffuse.png", "assets/container_specular.png");
   // const cubeMesh = new SimpleMesh(gl, vertices, "assets/white.png", "assets/white.png");
@@ -106,7 +118,7 @@ async function main() {
   gl.enable(gl.DEPTH_TEST);
 
   function render() {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     var VP = camera.getViewProjectionMatrix();
@@ -131,6 +143,10 @@ async function main() {
     lightShader.use();
     lightShader.setMat4("VP", VP);
     lightMesh.draw(lightShader);
+
+    skyboxShader.use(); 
+    skyboxShader.setMat4("VP", VP);
+    skybox.draw();
     
     console.log("test");
     requestAnimationFrame(render);

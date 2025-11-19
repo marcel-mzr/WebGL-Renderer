@@ -1,8 +1,8 @@
 import { mat4, vec3 } from "gl-matrix";
 import { Shader } from "./shader";
 import * as THREE from 'three';
-import { extractVertices, extractIndices, toMat4 } from "./model-loader";
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { toMat4 } from "./utils";
 
 
 export class Model {
@@ -21,45 +21,43 @@ export class Model {
 
     /** @type {Map<String, WebGlTexture>} */
     this.textures = new Map();
-
-    this.load();
   }
 
-  load() {
+  async load() {
     var loader = new GLTFLoader();
-    loader.load(this.modelPath, (gltf) => {
 
-      console.log(gltf);
-      gltf.scene.traverse((child) => {
+    const gltf = await loader.loadAsync(this.modelPath);
+
+    console.log(gltf);
+    gltf.scene.traverse((child) => {
+      
+      if (child.isMesh) {
+        /** @type {THREE.Mesh} */
+        const threeMesh = child;
         
-        if (child.isMesh) {
-          /** @type {THREE.Mesh} */
-          const threeMesh = child;
-          
-          const mapTexture = threeMesh.material.map;
-          const metalnessMapTexture = threeMesh.material.metalnessMap;
-          const normalMapTexture = threeMesh.material.normalMap;
-          const roughnessMapTexture = threeMesh.material.roughnessMap;
+        const mapTexture = threeMesh.material.map;
+        const metalnessMapTexture = threeMesh.material.metalnessMap;
+        const normalMapTexture = threeMesh.material.normalMap;
+        const roughnessMapTexture = threeMesh.material.roughnessMap;
 
-          // Setup textures of the mesh if they exist
-          if (mapTexture?.name && !this.textures.has(mapTexture.name)) {
-            this.textures.set(mapTexture.name, this.setupTexture(mapTexture));
-          }
-          if (metalnessMapTexture?.name && !this.textures.has(metalnessMapTexture.name)) {
-            this.textures.set(metalnessMapTexture.name, this.setupTexture(metalnessMapTexture));
-          }
-          if (normalMapTexture?.name && !this.textures.has(normalMapTexture.name)) {
-            this.textures.set(normalMapTexture.name, this.setupTexture(normalMapTexture));
-          }
-          if (roughnessMapTexture?.name && !this.textures.has(roughnessMapTexture.name)) {
-            this.textures.set(roughnessMapTexture.name, this.setupTexture(roughnessMapTexture));
-          }
-          
-          var mesh = new Mesh(this.gl, this, threeMesh);
-          mesh.load();
-          this.meshes.push(mesh);
+        // Setup textures of the mesh if they exist
+        if (mapTexture?.name && !this.textures.has(mapTexture.name)) {
+          this.textures.set(mapTexture.name, this.setupTexture(mapTexture));
         }
-      }); 
+        if (metalnessMapTexture?.name && !this.textures.has(metalnessMapTexture.name)) {
+          this.textures.set(metalnessMapTexture.name, this.setupTexture(metalnessMapTexture));
+        }
+        if (normalMapTexture?.name && !this.textures.has(normalMapTexture.name)) {
+          this.textures.set(normalMapTexture.name, this.setupTexture(normalMapTexture));
+        }
+        if (roughnessMapTexture?.name && !this.textures.has(roughnessMapTexture.name)) {
+          this.textures.set(roughnessMapTexture.name, this.setupTexture(roughnessMapTexture));
+        }
+        
+        var mesh = new Mesh(this.gl, this, threeMesh);
+        mesh.load();
+        this.meshes.push(mesh);
+      }
     });
   }
 
@@ -93,14 +91,23 @@ export class Model {
    * 
    * @param {Shader} shader 
    */
-
   draw(shader) {
     if (this.meshes.length === 0) return;
     
     this.meshes.forEach(mesh => {
       mesh.draw(shader);
+    }); 
+  }
+
+
+  /**
+   * Sets the scale of the model to the scale factor
+   * @param {number} scaleFactor
+   */
+  scale(scaleFactor) {
+    this.meshes.forEach(mesh => {
+      mesh.scale(scaleFactor);
     });
-    
   }
 }
 
@@ -115,17 +122,16 @@ export class Mesh {
    */
   constructor(gl, model, threeMesh) {
     this.FLOAT_SIZE = 4;
-    this.VERTEX_BYTE_COUNT = 12;
-    this.STRIDE = this.VERTEX_BYTE_COUNT * this.FLOAT_SIZE;
+    this.VERTEX_FLOAT_COUNT = 12;
+    this.STRIDE = this.VERTEX_FLOAT_COUNT * this.FLOAT_SIZE;
     
     this.gl = gl
     this.model = model;
 
     this.vertices = extractVertices(threeMesh);
-    console.log(this.vertices);
     this.indices = extractIndices(threeMesh);
 
-    this.vertexCount = this.vertices.length / this.VERTEX_BYTE_COUNT;
+    this.vertexCount = this.vertices.length / this.VERTEX_FLOAT_COUNT;
     
     this.mapTexture = null;
     this.metallnessMapTexture = null;
@@ -134,11 +140,13 @@ export class Mesh {
     this.extractTextures(model, threeMesh);
 
 
-    this.modelMatrix = mat4.create();
-    // mat4.translate(this.modelMatrix, this.modelMatrix, vec3.fromValues(30.0, -2.0, 1.0));
+    // The matrix that transforms the model to the origin of the world space with no scaling or rotation applied
+    this.worldMatrix = toMat4(threeMesh.matrixWorld);
 
-    // mat4.scale(this.modelMatrix, this.modelMatrix, vec3.fromValues(0.01, 0.01, 0.01));
-    mat4.multiply(this.modelMatrix, this.modelMatrix, toMat4(threeMesh.matrixWorld));
+    this.modelMatrix = mat4.create();
+    this.meshScale = vec3.fromValues(1.0, 1.0, 1.0);
+
+    this.updateModelMatrix();
 
   }
 
@@ -226,6 +234,21 @@ export class Mesh {
     }
   }
 
+  
+  /**
+   * Sets the scale of the mesh to the scale factor
+   * @param {number} scaleFactor
+   */
+  scale(scaleFactor) {
+    vec3.set(this.meshScale, scaleFactor, scaleFactor, scaleFactor);
+    this.updateModelMatrix();
+  }
+
+  updateModelMatrix() {
+    mat4.scale(this.modelMatrix, mat4.create(), this.meshScale);
+    mat4.multiply(this.modelMatrix, this.modelMatrix, this.worldMatrix);
+  }
+
   /**
    * 
    * @returns {mat4} The model transform of the mesh
@@ -233,4 +256,62 @@ export class Mesh {
   getModelMatrix() {
     return this.modelMatrix;
   }
+}
+
+/**
+ * Extracts the vertices out of a THREE.Mesh
+ * @param {THREE.Mesh} threeMesh 
+ * @returns {Float32Array} An Array of vertices in order [Vec3 Pos, Vec3 Normal, Vec4 Tangent, Vec2 UV]
+ */
+function extractVertices(threeMesh) {
+  const VERTEX_FLOAT_COUNT = 12;
+
+
+  if (!(threeMesh.geometry instanceof THREE.BufferGeometry)) {
+    throw new Error("Can only process meshes with BufferGeometry type")
+  }
+
+  /** @type {THREE.BufferGeometry} */
+  const geometry = threeMesh.geometry;
+
+  const positions = geometry.getAttribute("position");
+  const normals = geometry.getAttribute("normal");
+  const tangents = geometry.getAttribute("tangent");
+  const uvs = geometry.getAttribute("uv");
+
+  const vertexCount = positions.count;
+  var vertexArray = new Float32Array(VERTEX_FLOAT_COUNT * vertexCount);
+
+  for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+    // Add positions
+    for (let i = 0; i < 3; ++i) {
+      vertexArray[vertexIndex * VERTEX_FLOAT_COUNT + i] = positions.array[vertexIndex * 3 + i];
+    }
+    // Add normals
+    for (let i = 0; i < 3; ++i) {
+      vertexArray[vertexIndex * VERTEX_FLOAT_COUNT + 3 + i] = normals.array[vertexIndex * 3 + i];
+    }
+    // Add tangents
+    if (tangents?.array) {
+      for (let i = 0; i < 4; ++i) {
+        vertexArray[vertexIndex * VERTEX_FLOAT_COUNT + 6 + i] = tangents.array[vertexIndex * 4 + i];
+      }
+    }
+    // Add uvs
+    if (uvs?.array) {
+      for (let i = 0; i < 4; ++i) {
+        vertexArray[vertexIndex * VERTEX_FLOAT_COUNT + 10 + i] = uvs.array[vertexIndex * 2 + i];
+      }
+    }
+  }
+  return vertexArray;
+}
+
+/**
+ * Extracts the indices out of a THREE.Mesh
+ * @param {THREE.Mesh} threeMesh 
+ * @returns {Uint32Array} An Array of indices
+ */
+function extractIndices(threeMesh) {
+  return threeMesh.geometry.index.array;
 }
