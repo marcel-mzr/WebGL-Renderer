@@ -72,11 +72,14 @@ export class Skybox {
 
   /**
    * Draws the skybox
+   * @param {Shader} skyboxShader
    */
-  draw() {
+  draw(skyboxShader) {
     this.gl.depthMask(false);
 
     this.gl.bindVertexArray(this.vao);
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    skyboxShader.setInt("skybox", 0);
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.cubemap);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 36);
 

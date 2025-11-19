@@ -146,7 +146,7 @@ async function main() {
 
     skyboxShader.use(); 
     skyboxShader.setMat4("VP", VP);
-    skybox.draw();
+    skybox.draw(skyboxShader);
     
     console.log("test");
     requestAnimationFrame(render);
