@@ -37,6 +37,10 @@ async function main() {
   const skyboxShader = new Shader(gl, "shaders/skybox.vert", "shaders/skybox.frag");
   await skyboxShader.init();
 
+  /** @type {Shader} */
+  const pbrShader = new Shader(gl, "shaders/pbr_metalic_rough_dir_light.vert", "shaders/pbr_metalic_rough_dir_light.frag");
+  await pbrShader.init();
+
 
 
   // Positions, normals, uv's
@@ -86,8 +90,8 @@ async function main() {
 
 
   // const model = new Model(gl, "assets/whimsical_enchanted_forest_cottage/scene.gltf");
-  const model = new Model(gl, "assets/survival_guitar_backpack/scene.gltf");
-  // const model = new Model(gl, "assets/porsche_911_gt3_r_no_interior/scene.gltf");
+  // const model = new Model(gl, "assets/survival_guitar_backpack/scene.gltf");
+  const model = new Model(gl, "assets/porsche_911_gt3_r_no_interior/scene.gltf");
   await model.load();
   /*
   const skybox = new Skybox(gl, "assets/storforsen2_skybox");
@@ -105,13 +109,13 @@ async function main() {
   const lightMesh = new SimpleMesh(gl, vertices, "assets/white.png", "assets/white.png");
   await lightMesh.load();
   const lightPosition = vec3.fromValues(2.0, 2.0, 1.0);
+  const lightDirection = vec3.create();
+  vec3.scale(lightDirection, lightPosition, -1);
+  vec3.normalize(lightDirection, lightDirection);
+
   lightMesh.setPosition(lightPosition);
   lightMesh.setScale(vec3.fromValues(0.2, 0.2, 0.2));
-  /*
-  const lightAmbient = vec3.fromValues(0.2, 0.2, 0.2);
-  const lightDiffuse = vec3.fromValues(0.5, 0.5, 0.5);
-  const lightSpecular = vec3.fromValues(1.0, 1.0, 1.0);
-  */
+
 
   const inputHandler = new InputHandler(canvas);
   
@@ -125,31 +129,21 @@ async function main() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
     var VP = camera.getViewProjectionMatrix();
-    /*
-    basicShader.use();
-    basicShader.setMat4("VP", VP);
 
-    basicShader.setVec3("light.position", lightPosition);
-    basicShader.setVec3("light.ambient", lightAmbient);
-    basicShader.setVec3("light.diffuse", lightDiffuse);
-    basicShader.setVec3("light.specular", lightSpecular);
-    
-    basicShader.setVec3("camera_position", camera.getPosition())
-    cubeMesh.draw(basicShader);
-     */
-
-    //testShader.setMat4("VP", VP);
-    testShader.use();
-    testShader.setMat4("VP", VP);
-    model.draw(testShader);
+    pbrShader.use();
+    pbrShader.setMat4("VP", VP);
+    pbrShader.setVec3("camera_position", camera.getPosition());
+    pbrShader.setVec3("sun_light_direction", lightDirection);
+    pbrShader.setVec3("sun_light_color", vec3.fromValues(10.0, 10.0, 10.0));
+    model.draw(pbrShader);
     
     lightShader.use();
     lightShader.setMat4("VP", VP);
     lightMesh.draw(lightShader);
 
     skyboxShader.use(); 
-    skyboxShader.setMat4("V", camera.getViewMatrix())
-    skyboxShader.setMat4("P", camera.getProjectionMatrix())
+    skyboxShader.setMat4("V", camera.getViewMatrix());
+    skyboxShader.setMat4("P", camera.getProjectionMatrix());
     skyboxShader.setMat4("VP", VP);
     skybox.draw(skyboxShader);
     

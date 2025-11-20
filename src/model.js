@@ -35,14 +35,14 @@ export class Model {
         /** @type {THREE.Mesh} */
         const threeMesh = child;
         
-        const mapTexture = threeMesh.material.map;
+        const albedoMapTexture = threeMesh.material.map;
         const metalnessMapTexture = threeMesh.material.metalnessMap;
         const normalMapTexture = threeMesh.material.normalMap;
         const roughnessMapTexture = threeMesh.material.roughnessMap;
 
         // Setup textures of the mesh if they exist
-        if (mapTexture?.name && !this.textures.has(mapTexture.name)) {
-          this.textures.set(mapTexture.name, this.setupTexture(mapTexture));
+        if (albedoMapTexture?.name && !this.textures.has(albedoMapTexture.name)) {
+          this.textures.set(albedoMapTexture.name, this.setupTexture(albedoMapTexture));
         }
         if (metalnessMapTexture?.name && !this.textures.has(metalnessMapTexture.name)) {
           this.textures.set(metalnessMapTexture.name, this.setupTexture(metalnessMapTexture));
@@ -133,8 +133,8 @@ export class Mesh {
 
     this.vertexCount = this.vertices.length / this.VERTEX_FLOAT_COUNT;
     
-    this.mapTexture = null;
-    this.metallnessMapTexture = null;
+    this.albedoMapTexture = null;
+    this.metalnessMapTexture = null;
     this.normalMapTexture = null;
     this.roughnessMapTexture = null;
     this.extractTextures(model, threeMesh);
@@ -186,15 +186,7 @@ export class Mesh {
    * @param {Shader} shader - Active shader (use called beforehand)
    */
   draw(shader) {
-    // Input albedo texture
-    if (this.mapTexture) {
-      this.gl.activeTexture(this.gl.TEXTURE0);
-      shader.setInt("albedo_texture", 0);
-      this.gl.bindTexture(this.gl.TEXTURE_2D, this.mapTexture);
-      shader.setBool("has_albedo_texture", true);
-    } else {
-      shader.setBool("has_albedo_texture", false);
-    }
+    this.enableTextures(shader);
     
     // Set model matrix
     shader.setMat4("M", this.modelMatrix);
@@ -210,18 +202,64 @@ export class Mesh {
   }
 
   /**
+   * Enables the textures of the mesh for the shader
+   * @param {Shader} shader 
+   */
+  enableTextures(shader) {
+    // Enable albedoMap texture
+    if (this.albedoMapTexture) {
+      this.gl.activeTexture(this.gl.TEXTURE0);
+      shader.setInt("albedo_map", 0);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.albedoMapTexture);
+      shader.setBool("has_albedo_map", true);
+    } else {
+      shader.setBool("has_albedo_map", false);
+    }
+
+    // Enable normalMap texture
+    if (this.normalMapTexture) {
+      this.gl.activeTexture(this.gl.TEXTURE1);
+      shader.setInt("normal_map", 1);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.normalMapTexture);
+      shader.setBool("has_normal_map", true);
+    } else {
+      shader.setBool("has_normal_map", false);
+    }
+
+    // Enable metalnessMap texture
+    if (this.metalnessMapTexture) {
+      this.gl.activeTexture(this.gl.TEXTURE2);
+      shader.setInt("metalness_map", 2);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.metalnessMapTexture);
+      shader.setBool("has_metalness_map", true);
+    } else {
+      shader.setBool("has_metalness_map", false);
+    }
+
+    // Enable roughness texture
+    if (this.roughnessMapTexture) {
+      this.gl.activeTexture(this.gl.TEXTURE3);
+      shader.setInt("roughness_map", 3);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.roughnessMapTexture);
+      shader.setBool("has_roughness_map", true);
+    } else {
+      shader.setBool("has_roughness_map", false);
+    }
+  }
+
+  /**
    * Sets the corresponding fields for the textures to the textures if it exists and to null if it doesn't.
    * @param {Model} model 
    * @param {THREE.Mesh} threeMesh 
    */
   extractTextures(model, threeMesh) {
-    const mapTexture = threeMesh.material.map;
+    const albedoMapTexture = threeMesh.material.map;
     const metalnessMapTexture = threeMesh.material.metalnessMap;
     const normalMapTexture = threeMesh.material.normalMap;
     const roughnessMapTexture = threeMesh.material.roughnessMap;
 
-    if (mapTexture?.name) {
-      this.mapTexture = model.textures.get(mapTexture.name);
+    if (albedoMapTexture?.name) {
+      this.albedoMapTexture = model.textures.get(albedoMapTexture.name);
     }
     if (metalnessMapTexture?.name) {
       this.metalnessMapTexture = model.textures.get(metalnessMapTexture.name);
