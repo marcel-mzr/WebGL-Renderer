@@ -1,20 +1,21 @@
-import { Model } from "./model";
+import { Renderer } from "./renderer";
+import { Model } from "./scene-data-structures";
 
 export class RendererController {
 
   /**
-   * @param {Model} model 
+   * @param {Renderer} renderer 
    */
-  constructor(model) {
-    this.model = model;
+  constructor(renderer) {
+    this.renderer = renderer;
+  }
 
-    // Setup callbacks
+  setupCallbacks() {
     document.getElementById("model-scale-slider").addEventListener("input", (e) => this.onModelScale(e));
-
   }
 
   onModelScale(event) {
-    this.model.scale(event.target.value);
+    this.renderer.getModel().scale(event.target.value);
   }
 
 }

@@ -14,7 +14,6 @@ TODO:
 in vec3 normal;
 in vec2 uv;
 in vec3 position;
-in vec4 tangent;
 
 out vec4 outColor;
 
@@ -35,6 +34,7 @@ uniform bool has_roughness_map;
 
 // Function declarations:
 bool shouldDiscard();
+vec3 readOutNormal();
 float normalDistributionGGX(vec3 N, vec3 H, float roughness);
 float geometrySchlickGGX(vec3 N, vec3 V, float roughness);
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
@@ -84,8 +84,13 @@ void main() {
   float dot_N_L = max(dot(N, L), 0.0);
   vec3 LO = (k_d * diffuse_brdf + specular_brdf) * light_radiance * dot_N_L;
 
+  // Calculate final color
   vec3 final_color = LO + ambient;
+  // HDR -> LDR
+  final_color = final_color / (final_color + vec3(1.0));
+  // Transform color back from linear color space to gamma space
   final_color = pow(final_color, vec3(1.0/2.2));
+
   outColor = vec4(final_color, 1.0);
 }
 
@@ -139,7 +144,7 @@ float geometrySchlickGGX(vec3 N, vec3 V, float roughness) {
 }
 
 /**
- * Combines gemetry obstruction and geometry shadowing.
+ * Combines geometry obstruction and geometry shadowing.
  * 
  * N - The normal vector
  * V - The vector pointing to the camera

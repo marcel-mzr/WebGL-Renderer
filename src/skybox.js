@@ -34,8 +34,9 @@ export class Skybox {
     // Setup textures
     this.cubemap = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.cubemap);
-    
-    const FACE_NAMES = ["posx", "negx", "negy", "posy", "posz", "negz"];
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+
+    const FACE_NAMES = ["posx", "negx", "posy", "negy", "posz", "negz"];
 
     for (let i = 0; i < FACE_NAMES.length; ++i) {
 
@@ -45,6 +46,7 @@ export class Skybox {
       await faceImage.decode();
 
       this.gl.texImage2D(this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, faceImage);
+
     }
 
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
@@ -91,7 +93,6 @@ export class Skybox {
   }
 
 }
-
 
 
 function createSkyboxVertices() {

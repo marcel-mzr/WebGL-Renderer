@@ -6,7 +6,7 @@ export class Camera {
   /**
    * 
    * @param {InputHandler} inputHandler 
-   * @param {*} aspectRatio 
+   * @param {number} aspectRatio 
    */
   constructor(inputHandler, aspectRatio) {
     this.aspectRatio = aspectRatio;

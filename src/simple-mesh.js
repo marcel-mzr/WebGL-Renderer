@@ -69,6 +69,7 @@ export class SimpleMesh {
     // Set texture options
     const texture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
 
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
@@ -76,11 +77,12 @@ export class SimpleMesh {
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR)
 
     // fill texture data and generate mipmaps
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, textureImage);
     this.gl.generateMipmap(this.gl.TEXTURE_2D);
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+
     return texture;
   }
 
@@ -145,4 +147,60 @@ export class SimpleMesh {
   getModelMatrix() {
     return this.modelMatrix;
   }
+}
+
+/**
+ * Creates a simple uninitialized cube mesh.
+ * @param {WebGL2RenderingContext} gl
+ * @param {string} diffuseTexturePath
+ * @param {string} specularTexturePath
+ * @returns {SimpleMesh} the created (uninitialized) cube mesh
+ */
+export function createSimpleCubeMesh(gl, diffuseTexturePath, specularTexturePath) {
+  // Positions, normals, uv's
+  const vertices = new Float32Array([
+    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0,  0.0,
+     0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  1.0,  0.0,
+     0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0,  1.0,
+     0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  1.0,  1.0,
+    -0.5,  0.5, -0.5,  0.0,  0.0, -1.0,  0.0,  1.0,
+    -0.5, -0.5, -0.5,  0.0,  0.0, -1.0,  0.0,  0.0,
+
+    -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,  0.0,  0.0,
+     0.5, -0.5,  0.5,  0.0,  0.0,  1.0,  1.0,  0.0,
+     0.5,  0.5,  0.5,  0.0,  0.0,  1.0,  1.0,  1.0,
+     0.5,  0.5,  0.5,  0.0,  0.0,  1.0,  1.0,  1.0,
+    -0.5,  0.5,  0.5,  0.0,  0.0,  1.0,  0.0,  1.0,
+    -0.5, -0.5,  0.5,  0.0,  0.0,  1.0,  0.0,  0.0,
+
+    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0,  0.0,
+    -0.5,  0.5, -0.5, -1.0,  0.0,  0.0,  1.0,  1.0,
+    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0,  1.0,
+    -0.5, -0.5, -0.5, -1.0,  0.0,  0.0,  0.0,  1.0,
+    -0.5, -0.5,  0.5, -1.0,  0.0,  0.0,  0.0,  0.0,
+    -0.5,  0.5,  0.5, -1.0,  0.0,  0.0,  1.0,  0.0,
+
+     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0,  0.0,
+     0.5,  0.5, -0.5,  1.0,  0.0,  0.0,  1.0,  1.0,
+     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0,  1.0,
+     0.5, -0.5, -0.5,  1.0,  0.0,  0.0,  0.0,  1.0,
+     0.5, -0.5,  0.5,  1.0,  0.0,  0.0,  0.0,  0.0,
+     0.5,  0.5,  0.5,  1.0,  0.0,  0.0,  1.0,  0.0,
+
+    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0,  1.0,
+     0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  1.0,  1.0,
+     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0,  0.0,
+     0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  1.0,  0.0,
+    -0.5, -0.5,  0.5,  0.0, -1.0,  0.0,  0.0,  0.0,
+    -0.5, -0.5, -0.5,  0.0, -1.0,  0.0,  0.0,  1.0,
+
+    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  1.0,
+     0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  1.0,  1.0,
+     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0,  0.0,
+     0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  1.0,  0.0,
+    -0.5,  0.5,  0.5,  0.0,  1.0,  0.0,  0.0,  0.0,
+    -0.5,  0.5, -0.5,  0.0,  1.0,  0.0,  0.0,  1.0
+  ]);
+
+  return new SimpleMesh(gl, vertices, diffuseTexturePath, specularTexturePath);
 }
