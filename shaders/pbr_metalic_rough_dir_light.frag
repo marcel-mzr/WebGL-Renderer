@@ -12,6 +12,7 @@ TODO:
 
 
 in vec3 normal;
+in vec4 tangent;
 in vec2 uv;
 in vec3 position;
 
@@ -34,7 +35,7 @@ uniform bool has_roughness_map;
 
 // Function declarations:
 bool shouldDiscard();
-vec3 readOutNormal();
+vec3 readOutTBNNormal();
 float normalDistributionGGX(vec3 N, vec3 H, float roughness);
 float geometrySchlickGGX(vec3 N, vec3 V, float roughness);
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
@@ -46,7 +47,7 @@ void main() {
   }
 
   // Normal vector
-  vec3 N = normalize(normal);
+  vec3 N = readOutTBNNormal();
   // View vector pointing towards camera
   vec3 V = normalize(camera_position - position);
   // Light direction (towards sun)
@@ -167,4 +168,18 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0) {
   float dot_H_V = max(dot(H, V), 0.0);
   return F0 + (1.0 - F0) * pow(1.0 - dot_H_V, 5.0);
+}
+
+vec3 readOutTBNNormal() {
+  vec3 N = normalize(normal);
+  vec3 T = normalize(vec3(tangent));
+  // renormalization of T through gram-schmitt
+  T = normalize(T - dot(T, N) * N);
+
+  vec3 B = normalize(cross(N, T) * tangent.w);
+
+  mat3 TBN = mat3(T, B, N);
+
+  vec3 tangent_space_normal = texture(normal_map, uv).xyz * 2.0 - 1.0;
+  return normalize(TBN * tangent_space_normal);
 }

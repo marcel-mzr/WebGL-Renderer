@@ -17,13 +17,17 @@ export class Renderer {
     this.gl = gl;
     this.camera = camera;
 
-    this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
+    // this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
+    // this.model = new Model(this.gl, "assets/treasure_chest/treasure_chest.gltf");
+    // this.model = new Model(this.gl, "assets/Sofa_01_4k/Sofa_01_4k.gltf");
+    this.model = new Model(this.gl, "assets/utility_box_02_4k/utility_box_02_4k.gltf");
+
     this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
 
-    this.sun = new DirectionalLight(lightDirection, vec3.fromValues(1.0, 0.94, 0.84), 1.0);
+    this.sun = new DirectionalLight(lightDirection, vec3.fromValues(1.0, 0.94, 0.84), 5.0);
 
     // Construct Light Indicator mesh
     this.lightIndicatorMesh = createSimpleCubeMesh(this.gl, "assets/white.png", "assets/white.png");

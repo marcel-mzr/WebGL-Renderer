@@ -72,6 +72,8 @@ export class Model {
     // Set texture options
     const texture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, texture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+
 
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
@@ -79,11 +81,12 @@ export class Model {
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR)
 
     // fill texture data and generate mipmaps
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
     this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, textureImage);
     this.gl.generateMipmap(this.gl.TEXTURE_2D);
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+
     return texture;
   }
 
@@ -127,7 +130,8 @@ export class Mesh {
     
     this.gl = gl
     this.model = model;
-
+    
+    checkAndComputeGeometry(threeMesh);
     this.vertices = extractVertices(threeMesh);
     this.indices = extractIndices(threeMesh);
 
@@ -352,4 +356,31 @@ function extractVertices(threeMesh) {
  */
 function extractIndices(threeMesh) {
   return threeMesh.geometry.index.array;
+}
+
+/**
+ * Check if normals and tangens are present in a THREE.Mesh and computes them if not
+ * @param {THREE.Mesh} threeMesh 
+ */
+function checkAndComputeGeometry(threeMesh) {
+  const geometry = threeMesh.geometry;
+
+  const normals = threeMesh.geometry.getAttribute("normal");
+  const tangents = threeMesh.geometry.getAttribute("tangent");
+
+  if (!geometry.getAttribute("normal")) {
+    console.log("Normals of the loaded mesh missing. Computing automatically");
+    threeMesh.geometry.computeVertexNormals();
+  }
+
+  if (!geometry.getAttribute("tangent")) {
+    console.log("Tangents of the loaded mesh are missing.")
+    if (!geometry.getAttribute("uv")) {
+      console.log("Cannot compute tangents since uv's are missing.");
+    } else {
+      console.log("Computing tangents");
+      threeMesh.geometry.computeTangents();
+    }
+  }
+
 }

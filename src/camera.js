@@ -66,7 +66,7 @@ export class Camera {
     // Camera restrictions
     this.minZenith = 0.01;
     this.maxZenith = Math.PI - this.minZenith;
-    this.minDistance = 0.0;
+    this.minDistance = 0.2;
     this.maxDistance = 100.0;
 
 
