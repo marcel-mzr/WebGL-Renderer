@@ -7,7 +7,6 @@ precision highp float;
 /*
 TODO:
  - add ambient occlusion (read out green channel)
- - add normal mapping
 */
 
 
@@ -27,11 +26,13 @@ uniform sampler2D albedo_map;
 uniform sampler2D normal_map;
 uniform sampler2D metalness_map;
 uniform sampler2D roughness_map;
+uniform sampler2D ao_map;
 
 uniform bool has_albedo_map;
 uniform bool has_normal_map;
 uniform bool has_metalness_map;
 uniform bool has_roughness_map;
+uniform bool has_ao_map;
 
 // Function declarations:
 bool shouldDiscard();
@@ -47,7 +48,7 @@ void main() {
   }
 
   // Normal vector
-  vec3 N = readOutTBNNormal();
+  vec3 N = has_normal_map ? readOutTBNNormal() : normalize(normal);
   // View vector pointing towards camera
   vec3 V = normalize(camera_position - position);
   // Light direction (towards sun)
@@ -55,11 +56,11 @@ void main() {
   // Halfway vector relative to sunlight direction and view direction
   vec3 H = normalize(L + V);
 
-  // TODO: convert from srgb space to linear color space
-  vec3 albedo = texture(albedo_map, uv).rgb;
-  albedo = pow(albedo, vec3(2.2));
-  float roughness = texture(roughness_map, uv).g;
-  float metalness = texture(metalness_map, uv).b;
+  // convert from srgb space to linear color space 
+  vec3 albedo = has_albedo_map ? pow(texture(albedo_map, uv).rgb, vec3(2.2)) : vec3(1.0);
+  float ao_factor = has_ao_map ? texture(ao_map, uv).r : 1.0;
+  float roughness = has_roughness_map ? texture(roughness_map, uv).g : 0.5;
+  float metalness = has_metalness_map ? texture(metalness_map, uv).b : 0.0 ;
 
   // F0 is the base refectivity of a surface
   vec3 F0 = vec3(0.04);
@@ -80,7 +81,7 @@ void main() {
   vec3 specular_brdf = specular_brdf_num / specular_brdf_den;
   vec3 diffuse_brdf = albedo / PI;
   // TODO: change when doing IBL
-  vec3 ambient = vec3(0.03) * albedo;
+  vec3 ambient = vec3(0.03) * albedo * ao_factor;
   // Light contribution towards camera
   float dot_N_L = max(dot(N, L), 0.0);
   vec3 LO = (k_d * diffuse_brdf + specular_brdf) * light_radiance * dot_N_L;
@@ -170,6 +171,9 @@ vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0) {
   return F0 + (1.0 - F0) * pow(1.0 - dot_H_V, 5.0);
 }
 
+/**
+ * Constucts the TBN and reads out its normal
+ */
 vec3 readOutTBNNormal() {
   vec3 N = normalize(normal);
   vec3 T = normalize(vec3(tangent));

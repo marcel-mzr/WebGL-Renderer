@@ -2,7 +2,7 @@ import { mat4, vec3 } from "gl-matrix";
 import { Shader } from "./shader";
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { toMat4 } from "./utils";
+import { toMat4, toVec3 } from "./utils";
 
 
 export class Model {
@@ -13,6 +13,9 @@ export class Model {
    * @param {string} modelPath 
    */
   constructor(gl, modelPath) {
+    // The default scale that maps to scale factor 1.0 of the largest axis of the model
+    this.INITIAL_MODEL_SIZE = 2.0;
+
     this.gl = gl;
     this.modelPath = modelPath;
 
@@ -25,9 +28,25 @@ export class Model {
 
   async load() {
     var loader = new GLTFLoader();
-
+    
     const gltf = await loader.loadAsync(this.modelPath);
 
+    // Retrieve center position of the object
+    const rootObj = gltf.scene;
+    const aabb = new THREE.Box3();
+    aabb.setFromObject(rootObj);
+    const threeCenter = new THREE.Vector3();
+    aabb.getCenter(threeCenter);
+    const objCenterTranslation = toVec3(threeCenter);
+    vec3.scale(objCenterTranslation, objCenterTranslation,-1);
+
+    // Retrieve scale adjustment
+    const aabbSize = new THREE.Vector3();
+    aabb.getSize(aabbSize);
+    const objScaleAdjustment = this.INITIAL_MODEL_SIZE / Math.max(aabbSize.x, aabbSize.y, aabbSize.z);
+
+    console.log(objCenterTranslation);
+    console.log(aabb);
     console.log(gltf);
     gltf.scene.traverse((child) => {
       
@@ -39,6 +58,7 @@ export class Model {
         const metalnessMapTexture = threeMesh.material.metalnessMap;
         const normalMapTexture = threeMesh.material.normalMap;
         const roughnessMapTexture = threeMesh.material.roughnessMap;
+        const aoMapTexture = threeMesh.material.aoMap;
 
         // Setup textures of the mesh if they exist
         if (albedoMapTexture?.name && !this.textures.has(albedoMapTexture.name)) {
@@ -53,9 +73,13 @@ export class Model {
         if (roughnessMapTexture?.name && !this.textures.has(roughnessMapTexture.name)) {
           this.textures.set(roughnessMapTexture.name, this.setupTexture(roughnessMapTexture));
         }
+        if (aoMapTexture?.name && !this.textures.has(aoMapTexture.name)) {
+          this.textures.set(aoMapTexture.name, this.setupTexture(aoMapTexture));
+        }
         
         var mesh = new Mesh(this.gl, this, threeMesh);
         mesh.load();
+        mesh.applyWorldMatrixAdjustment(objScaleAdjustment, objCenterTranslation);
         this.meshes.push(mesh);
       }
     });
@@ -141,10 +165,11 @@ export class Mesh {
     this.metalnessMapTexture = null;
     this.normalMapTexture = null;
     this.roughnessMapTexture = null;
+    this.aoMapTexture = null;
     this.extractTextures(model, threeMesh);
 
 
-    // The matrix that transforms the model to the origin of the world space with no scaling or rotation applied
+    // The matrix that transforms the model to the origin of the world space
     this.worldMatrix = toMat4(threeMesh.matrixWorld);
 
     this.modelMatrix = mat4.create();
@@ -240,7 +265,7 @@ export class Mesh {
       shader.setBool("has_metalness_map", false);
     }
 
-    // Enable roughness texture
+    // Enable roughnessMap texture
     if (this.roughnessMapTexture) {
       this.gl.activeTexture(this.gl.TEXTURE3);
       shader.setInt("roughness_map", 3);
@@ -248,6 +273,16 @@ export class Mesh {
       shader.setBool("has_roughness_map", true);
     } else {
       shader.setBool("has_roughness_map", false);
+    }
+
+    // Enable aoMap texture
+    if (this.aoMapTexture) {
+      this.gl.activeTexture(this.gl.TEXTURE4);
+      shader.setInt("ao_map", 4);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.aoMapTexture);
+      shader.setBool("has_ao_map", true);
+    } else {
+      shader.setBool("has_ao_map", false);
     }
   }
 
@@ -261,6 +296,7 @@ export class Mesh {
     const metalnessMapTexture = threeMesh.material.metalnessMap;
     const normalMapTexture = threeMesh.material.normalMap;
     const roughnessMapTexture = threeMesh.material.roughnessMap;
+    const aoMapTexture = threeMesh.material.aoMap;
 
     if (albedoMapTexture?.name) {
       this.albedoMapTexture = model.textures.get(albedoMapTexture.name);
@@ -274,6 +310,23 @@ export class Mesh {
     if (roughnessMapTexture?.name) {
       this.roughnessMapTexture = model.textures.get(roughnessMapTexture.name);
     }
+    if (aoMapTexture?.name) {
+      this.aoMapTexture = model.textures.get(aoMapTexture.name);
+    }
+  }
+
+  /**
+   * Adjusts the worldMatrix of the Mesh. newWorldMatrix = Scale * Translation * oldWorldMatrix
+   * @param {number} scaleFactor - the the scale factor the mesh should be adjusted by
+   * @param {vec3} translation - the translation the mesh should be adjusted by
+   */
+  applyWorldMatrixAdjustment(scaleFactor, translation) {
+    var adjustementMatrix = mat4.create();
+    mat4.scale(adjustementMatrix, adjustementMatrix, vec3.fromValues(scaleFactor, scaleFactor, scaleFactor));
+    mat4.translate(adjustementMatrix, adjustementMatrix, translation);
+    mat4.mul(this.worldMatrix, adjustementMatrix, this.worldMatrix);
+
+    this.updateModelMatrix();
   }
 
   

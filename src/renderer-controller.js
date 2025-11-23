@@ -1,5 +1,5 @@
 import { Renderer } from "./renderer";
-import { Model } from "./scene-data-structures";
+import { Model } from "./scene-datastructures";
 
 export class RendererController {
 

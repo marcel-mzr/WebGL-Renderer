@@ -1,6 +1,6 @@
 import { vec3 } from "gl-matrix";
 import { DirectionalLight } from "./light";
-import { Model } from "./scene-data-structures";
+import { Model } from "./scene-datastructures";
 import { Skybox } from "./skybox";
 import { Shader } from "./shader";
 import { Camera } from "./camera";
@@ -19,8 +19,8 @@ export class Renderer {
 
     // this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
     // this.model = new Model(this.gl, "assets/treasure_chest/treasure_chest.gltf");
-    // this.model = new Model(this.gl, "assets/Sofa_01_4k/Sofa_01_4k.gltf");
-    this.model = new Model(this.gl, "assets/utility_box_02_4k/utility_box_02_4k.gltf");
+    this.model = new Model(this.gl, "assets/Sofa_01_4k/Sofa_01_4k.gltf");
+    // this.model = new Model(this.gl, "assets/utility_box_02_4k/utility_box_02_4k.gltf");
 
     this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
 
