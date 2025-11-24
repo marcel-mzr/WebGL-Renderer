@@ -3,7 +3,7 @@ import { Shader } from "./shader";
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { toMat4, toVec3 } from "./utils";
-
+import { RenderingOptions } from "./renderer";
 
 export class Model {
 
@@ -11,13 +11,15 @@ export class Model {
    * 
    * @param {WebGL2RenderingContext} gl
    * @param {string} modelPath
+   * @param {RenderingOptions} renderingOptionsRef - A reference to the renderers rendering options
    */
-  constructor(gl, modelPath, renderingOptionRef) {
+  constructor(gl, modelPath, renderingOptionsRef) {
     // The default scale that maps to scale factor 1.0 of the largest axis of the model
     this.INITIAL_MODEL_SIZE = 2.0;
 
     this.gl = gl;
     this.modelPath = modelPath;
+    this.renderingOptionsRef = renderingOptionsRef
 
     /** @type {[Mesh]} */
     this.meshes = [];
@@ -77,7 +79,7 @@ export class Model {
           this.textures.set(aoMapTexture.name, this.setupTexture(aoMapTexture));
         }
         
-        var mesh = new Mesh(this.gl, this, threeMesh);
+        var mesh = new Mesh(this.gl, this, threeMesh, this.renderingOptionsRef);
         mesh.load();
         mesh.applyWorldMatrixAdjustment(objScaleAdjustment, objCenterTranslation);
         this.meshes.push(mesh);
@@ -146,14 +148,16 @@ export class Mesh {
    * @param {WebGL2RenderingContext} gl
    * @param {Model} model The underlying model
    * @param {THREE.Mesh} threeMesh
+   * @param {RenderingOptions} renderingOptionsRef - a reference to the rendering options of the renderer
    */
-  constructor(gl, model, threeMesh) {
+  constructor(gl, model, threeMesh, renderingOptionsRef) {
     this.FLOAT_SIZE = 4;
     this.VERTEX_FLOAT_COUNT = 12;
     this.STRIDE = this.VERTEX_FLOAT_COUNT * this.FLOAT_SIZE;
     
     this.gl = gl
     this.model = model;
+    this.renderingOptionsRef = renderingOptionsRef;
     
     checkAndComputeGeometry(threeMesh);
     this.vertices = extractVertices(threeMesh);
@@ -246,7 +250,7 @@ export class Mesh {
     }
 
     // Enable normalMap texture
-    if (this.normalMapTexture) {
+    if (this.normalMapTexture && this.renderingOptionsRef.shouldNormalMap) {
       this.gl.activeTexture(this.gl.TEXTURE1);
       shader.setInt("normal_map", 1);
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.normalMapTexture);
@@ -276,7 +280,7 @@ export class Mesh {
     }
 
     // Enable aoMap texture
-    if (this.aoMapTexture) {
+    if (this.aoMapTexture && this.renderingOptionsRef.shouldDoAo) {
       this.gl.activeTexture(this.gl.TEXTURE4);
       shader.setInt("ao_map", 4);
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.aoMapTexture);

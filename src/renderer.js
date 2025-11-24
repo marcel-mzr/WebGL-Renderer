@@ -17,9 +17,9 @@ export class Renderer {
     this.gl = gl;
     this.camera = camera;
 
-    this.renderOptions = new RenderOptions();
+    this.renderingOptions = new RenderingOptions();
 
-    this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
+    this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf", this.renderingOptions);
     this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
@@ -85,10 +85,12 @@ export class Renderer {
     this.lightIndicatorMesh.draw(this.lightIndiatorShader);
 
     // Render the skybox
-    this.skyboxShader.use();
-    this.skyboxShader.setMat4("V", V);
-    this.skyboxShader.setMat4("P", P);
-    this.skybox.draw(this.skyboxShader);
+    if (this.renderingOptions.shouldRenderEnvironmentMap) {
+      this.skyboxShader.use();
+      this.skyboxShader.setMat4("V", V);
+      this.skyboxShader.setMat4("P", P);
+      this.skybox.draw(this.skyboxShader);
+    }
 
     // Request next animation frame
     if (this.shouldRender) {
@@ -130,7 +132,7 @@ export class Renderer {
    * @param {string} path 
    */
   async loadModelByPath(path) {
-    const newModel = new Model(this.gl, path);
+    const newModel = new Model(this.gl, path, this.renderingOptions);
     await newModel.load();
     this.model = newModel;
   }
@@ -140,7 +142,7 @@ export class Renderer {
   }
 }
 
-class RenderOptions {
+export class RenderingOptions {
   constructor() {
     this.shouldRenderEnvironmentMap = true;
     this.shouldRenderShadows = true;

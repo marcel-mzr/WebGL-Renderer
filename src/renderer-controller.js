@@ -127,36 +127,35 @@ export class RendererController {
     this.renderer.setSunDirectionToCameraViewDirection();
   }
 
-  onEnvMapToggle() { // TODO: implement
+  onEnvMapToggle() {
     if (this.envMapToggle.checked) {
-      console.log("Env map toggle checked");
+      this.renderer.renderingOptions.shouldRenderEnvironmentMap = true;
       // Enable iblToggle
       this.iblToggle.disabled = false;
       this.iblToggle.classList.remove("disabled-row");
     } else {
+      this.renderer.renderingOptions.shouldRenderEnvironmentMap = false;
       // Restrict Ibl option
       this.iblToggle.checked = false;
       this.onIblToggle();
       this.iblToggle.disabled = true;
       this.iblToggle.classList.add("disabled-row");
-
-      console.log("Env map toggle unchecked"); 
     }
   }
 
-  onAoMapToggle() { // TODO: implement
+  onAoMapToggle() {
     if (this.aoMapToggle.checked) {
-      console.log("Ao Map toggle checked"); 
+      this.renderer.renderingOptions.shouldDoAo = true;
     } else {
-      console.log("Ao Map toggle unchecked"); 
+      this.renderer.renderingOptions.shouldDoAo = false;
     }
   }
 
-  onNormalMapToggle() { // TODO: implement
+  onNormalMapToggle() {
     if (this.normalMapToggle.checked) {
-      console.log("Normal Map toggle checked"); 
+      this.renderer.renderingOptions.shouldNormalMap = true;
     } else {
-      console.log("Normal Map toggle unchecked"); 
+      this.renderer.renderingOptions.shouldNormalMap = false;
     }
   }
 
