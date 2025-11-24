@@ -4,12 +4,6 @@ precision highp float;
 // Constants
 #define PI 3.14159265
 
-/*
-TODO:
- - add ambient occlusion (read out green channel)
-*/
-
-
 in vec3 normal;
 in vec4 tangent;
 in vec2 uv;

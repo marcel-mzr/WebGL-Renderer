@@ -11,11 +11,28 @@ export class DirectionalLight {
    * @param {number} intensity - The intensity of the light
    */
   constructor(direction, color, intensity) {
-    /** @type {vec3} */
     this.direction = direction;
+    this.color = color;
+
     /** @type {vec3} */
     this.radiance = vec3.create();
     vec3.scale(this.radiance, color, intensity);
+  }
+
+  /**
+   * 
+   * @param {vec3} direction 
+   */
+  setDirection(direction) {
+    vec3.copy(this.direction, direction);
+  }
+
+  /**
+   * 
+   * @param {number} intensity 
+   */
+  setIntensity(intensity) {
+    vec3.scale(this.radiance, this.color, intensity);
   }
 
   getDirection() {

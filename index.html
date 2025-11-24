@@ -4,15 +4,85 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGl Renderer</title>
+  <link rel="stylesheet" href="styles.css">
   <script src="src/main.js" type="module"></script>
+
 </head>
 <body>
-  <canvas id="webgl-canvas" width="1000" height="700"></canvas>
+  <div id="app-container">
+    
+    <div id="canvas-wrapper">
+      <canvas id="webgl-canvas"></canvas>
+      <div id="loading-spinner" class="hidden"></div>
+    </div>
 
-  <div class="model-transform-controls">
-    Scale factor: <br>
-    <input type="range" id="model-scale-slider" min="0.01" max="10" value="1" step="0.01"> 
+    <div id="ui-sidebar">
+      <div class="ui-content">
+        
+        <div class="control-group">
+          <h3>Model</h3>
+          <select id="model-select" style="margin-bottom: 10px;">
+            <option value="assets/survival_guitar_backpack/scene.gltf">Survival Guitar Backpack</option>
+            <option value="assets/treasure_chest/treasure_chest.gltf">Treasure Chest</option>
+            <option value="assets/Sofa_01_4k/Sofa_01_4k.gltf">Sofa</option>
+            <option value="assets/utility_box_02_4k/utility_box_02_4k.gltf">Utility Box</option>
+          </select>
+          
+          <button class="action-btn" onclick="document.getElementById('model-upload').click()">Load Model File</button>
+          <input type="file" id="model-upload" style="display: none;" accept=".obj,.gltf">
+
+          <div style="margin-top: 15px;">
+            <div class="control-row">
+              <span>Scale</span>
+              <span id="scale-display" style="color:#aaa">1.0</span>
+            </div>
+            <input type="range" id="model-scale" min="0.1" max="5" step="0.1" value="1">
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Environment</h3>
+          
+          <div class="control-row">
+            <label for="toggle-sun">Enable Sun</label>
+            <input type="checkbox" id="toggle-sun" checked>
+          </div>
+
+          <div class="control-row">
+            <label>Intensity</label>
+            <input type="range" id="sun-intensity" min="0.1" max="20" step="0.1" value="5.0">
+          </div>
+
+          <button id="btn-sun-cam" class="action-btn primary-btn" style="margin-top:5px;">Set Sun to View</button>
+          
+          <div class="control-row" style="margin-top: 15px;">
+            <label for="toggle-env">Env Map</label>
+            <input type="checkbox" id="toggle-env" checked>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <h3>Renderer</h3>
+          
+          <div class="control-row">
+            <label for="toggle-ao">Ambient Occlusion</label>
+            <input type="checkbox" id="toggle-ao" checked>
+          </div>
+          <div class="control-row">
+            <label for="toggle-normal">Normal Maps</label>
+            <input type="checkbox" id="toggle-normal" checked>
+          </div>
+          <div class="control-row">
+            <label for="toggle-ibl">IBL</label>
+            <input type="checkbox" id="toggle-ibl" checked>
+          </div>
+          <div class="control-row">
+            <label for="toggle-shadows">Shadows</label>
+            <input type="checkbox" id="toggle-shadows" checked>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
-
 </body>
 </html>

@@ -25,7 +25,7 @@ async function main() {
   await renderer.init();
 
   const renderController = new RendererController(renderer);
-  renderController.setupCallbacks();
+  renderController.init();
 
   renderer.render();
 }

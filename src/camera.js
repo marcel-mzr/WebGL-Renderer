@@ -13,6 +13,8 @@ export class Camera {
     this.inputHandler = inputHandler;
 
     this.fov = 45 * Math.PI / 180;
+    this.nearPlane = 0.1;
+    this.farPlane = 100.0;
     this.worldUp = vec3.fromValues(0.0, 1.0, 0.0);
 
     /**
@@ -52,7 +54,7 @@ export class Camera {
      * @type {mat4}
     */
     this.projection = mat4.create();
-    mat4.perspective(this.projection, this.fov, this.aspectRatio, 0.1, 100);
+    mat4.perspective(this.projection, this.fov, this.aspectRatio, this.nearPlane, this.farPlane);
 
     /**
      * The projection * view matrix buffer to avoid garbage collection
@@ -68,6 +70,7 @@ export class Camera {
     this.maxZenith = Math.PI - this.minZenith;
     this.minDistance = 0.2;
     this.maxDistance = 100.0;
+
 
 
     this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
@@ -115,6 +118,19 @@ export class Camera {
 
     // (Re)-calculate matrices
     mat4.lookAt(this.view, this.cameraPosition, this.cameraTarget, this.worldUp);
+    mat4.mul(this.viewProjection, this.projection, this.view);
+  }
+
+  /**
+   * Updates the aspect ratio and recalculates the changed matrices
+   * @param {number} newAspectRatio 
+   */
+  updateAspectRatio(newAspectRatio) {
+    this.aspectRatio = newAspectRatio;
+    // Update projection matrix
+    this.projection = mat4.create();
+    mat4.perspective(this.projection, this.fov, this.aspectRatio, this.nearPlane, this.farPlane);
+    // Update view projection matrix
     mat4.mul(this.viewProjection, this.projection, this.view);
   }
 

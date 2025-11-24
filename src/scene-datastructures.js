@@ -10,9 +10,9 @@ export class Model {
   /**
    * 
    * @param {WebGL2RenderingContext} gl
-   * @param {string} modelPath 
+   * @param {string} modelPath
    */
-  constructor(gl, modelPath) {
+  constructor(gl, modelPath, renderingOptionRef) {
     // The default scale that maps to scale factor 1.0 of the largest axis of the model
     this.INITIAL_MODEL_SIZE = 2.0;
 

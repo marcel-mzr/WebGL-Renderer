@@ -17,11 +17,9 @@ export class Renderer {
     this.gl = gl;
     this.camera = camera;
 
-    // this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
-    // this.model = new Model(this.gl, "assets/treasure_chest/treasure_chest.gltf");
-    this.model = new Model(this.gl, "assets/Sofa_01_4k/Sofa_01_4k.gltf");
-    // this.model = new Model(this.gl, "assets/utility_box_02_4k/utility_box_02_4k.gltf");
+    this.renderOptions = new RenderOptions();
 
+    this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf");
     this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
@@ -98,7 +96,56 @@ export class Renderer {
     }
   }
 
+  /**
+   * Sets the size of the viewport
+   * @param {number} width 
+   * @param {number} height 
+   */
+  setViewPortDimensions(width, height) {
+    this.gl.viewport(0, 0, width, height);
+
+    this.camera.updateAspectRatio(width / height);
+  }
+
+  /**
+   * Updates the suns direction to match the viewing direction of the camera
+   */
+  setSunDirectionToCameraViewDirection() {
+    var newDirection = vec3.create();
+    vec3.scale(newDirection, this.camera.getPosition(), -1);
+    vec3.normalize(newDirection, newDirection);
+
+    this.sun.setDirection(newDirection);
+  }
+
+  /**
+   * Updates the intensity of the sun
+   */
+  setSunIntensity(intensity) {
+    this.sun.setIntensity(intensity);
+  }
+
+  /**
+   * Loads a new model given a path
+   * @param {string} path 
+   */
+  async loadModelByPath(path) {
+    const newModel = new Model(this.gl, path);
+    await newModel.load();
+    this.model = newModel;
+  }
+
   getModel() {
     return this.model;
+  }
+}
+
+class RenderOptions {
+  constructor() {
+    this.shouldRenderEnvironmentMap = true;
+    this.shouldRenderShadows = true;
+    this.shouldDoAo = true;
+    this.shouldNormalMap = true;
+    this.shouldDoIbl = true;
   }
 }
