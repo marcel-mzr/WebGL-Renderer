@@ -220,7 +220,10 @@ export class Mesh {
    */
   draw(shader) {
     this.enableTextures(shader);
-    
+    // Set other renderer dependent settings
+    shader.setBool("should_tone_map", this.renderingOptionsRef.shouldTonemap);
+    shader.setBool("should_alpha_correct", this.renderingOptionsRef.shouldAlphaCorrect);
+
     // Set model matrix
     shader.setMat4("M", this.modelMatrix);
 

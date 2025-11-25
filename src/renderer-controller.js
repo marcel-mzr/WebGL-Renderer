@@ -30,6 +30,8 @@ export class RendererController {
     this.normalMapToggle = document.getElementById("toggle-normal");
     this.iblToggle = document.getElementById("toggle-ibl");
     this.shadowsToggle = document.getElementById("toggle-shadows");
+    this.toneMappingToggle = document.getElementById("toggle-tone-mapping");
+    this.alphaCorrectionToggle = document.getElementById("toggle-alpha-correction");
 
   }
 
@@ -64,6 +66,9 @@ export class RendererController {
     this.normalMapToggle.addEventListener("click", () => this.onNormalMapToggle());
     this.iblToggle.addEventListener("click", () => this.onIblToggle());
     this.shadowsToggle.addEventListener("click", () => this.onShadowsToggle());
+    this.toneMappingToggle.addEventListener("click", () => this.onToneMappingToggle());
+    this.alphaCorrectionToggle.addEventListener("click", () => this.onAlphaCorrectionToggle());
+
   }
 
   /**
@@ -172,6 +177,22 @@ export class RendererController {
       console.log("Shadows toggle checked"); 
     } else {
       console.log("Shadows toggle unchecked"); 
+    }
+  }
+
+  onToneMappingToggle() { // TODO: implement
+    if (this.toneMappingToggle.checked) {
+      this.renderer.renderingOptions.shouldTonemap = true; 
+    } else {
+      this.renderer.renderingOptions.shouldTonemap = false;
+    }
+  }
+
+  onAlphaCorrectionToggle() { // TODO: implement
+    if (this.alphaCorrectionToggle.checked) {
+      this.renderer.renderingOptions.shouldAlphaCorrect = true;
+    } else {
+      this.renderer.renderingOptions.shouldAlphaCorrect = false;
     }
   }
 

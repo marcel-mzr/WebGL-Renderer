@@ -149,5 +149,7 @@ export class RenderingOptions {
     this.shouldDoAo = true;
     this.shouldNormalMap = true;
     this.shouldDoIbl = true;
+    this.shouldTonemap = true;
+    this.shouldAlphaCorrect = true;
   }
 }
