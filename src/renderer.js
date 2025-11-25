@@ -76,7 +76,12 @@ export class Renderer {
     this.pbrShader.setMat4("VP", VP);
     this.pbrShader.setVec3("camera_position", this.camera.getPosition());
     this.pbrShader.setVec3("sun_light_direction", this.sun.getDirection());
-    this.pbrShader.setVec3("sun_light_color", this.sun.getRadiance());
+    // Render the sun if enabled
+    if (this.renderingOptions.shouldRenderSun) {
+      this.pbrShader.setVec3("sun_light_color", this.sun.getRadiance());
+    } else {
+      this.pbrShader.setVec3("sun_light_color", vec3.fromValues(0.0, 0.0, 0.0));
+    }
     this.model.draw(this.pbrShader);
 
     // Render the light direction indicator
@@ -151,5 +156,6 @@ export class RenderingOptions {
     this.shouldDoIbl = true;
     this.shouldTonemap = true;
     this.shouldAlphaCorrect = true;
+    this.shouldRenderSun = true;
   }
 }

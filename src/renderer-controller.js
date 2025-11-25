@@ -117,9 +117,9 @@ export class RendererController {
 
   onSunToggle() { // TODO: implement
     if (this.sunToggle.checked) {
-      console.log("Sun toggle checked"); 
+      this.renderer.renderingOptions.shouldRenderSun = true;
     } else {
-      console.log("Sun toggle unchecked"); 
+      this.renderer.renderingOptions.shouldRenderSun = false;
     }
   }
 
