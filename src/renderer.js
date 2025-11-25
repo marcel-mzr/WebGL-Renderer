@@ -5,6 +5,8 @@ import { Skybox } from "./skybox";
 import { Shader } from "./shader";
 import { Camera } from "./camera";
 import { createSimpleCubeMesh } from "./simple-mesh";
+import { Framebuffer } from "./framebuffer";
+import { PostProcessingQuad } from "./post-processing-quad";
 
 export class Renderer {
 
@@ -24,7 +26,6 @@ export class Renderer {
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
-
     this.sun = new DirectionalLight(lightDirection, vec3.fromValues(1.0, 0.94, 0.84), 5.0);
 
     // Construct Light Indicator mesh
@@ -35,11 +36,15 @@ export class Renderer {
     vec3.scale(lightIndicatorPosition, lightDirection, -lightIndicatorDistance);
     this.lightIndicatorMesh.setPosition(lightIndicatorPosition);
 
+    this.postProcessingFramebuffer = new Framebuffer(this.gl, this.gl.canvas.width, this.gl.canvas.height);
+    this.postProcessingQuad = new PostProcessingQuad(this.gl);
+
     // Construct shaders
     this.lightIndiatorShader = new Shader(this.gl, "shaders/light.vert", "shaders/light.frag");
     this.skyboxShader = new Shader(this.gl, "shaders/skybox.vert", "shaders/skybox.frag");
     this.pbrShader = new Shader(this.gl, "shaders/pbr_metalic_rough_dir_light.vert", "shaders/pbr_metalic_rough_dir_light.frag");
-
+    this.postProcessingShader = new Shader(this.gl, "shaders/post_processing.vert", "shaders/post_processing.frag");
+    
     /** Variable to signal the stop of the render loop*/
     this.shouldRender = true;
   }
@@ -52,6 +57,7 @@ export class Renderer {
     await this.lightIndiatorShader.init();
     await this.skyboxShader.init();
     await this.pbrShader.init();
+    await this.postProcessingShader.init();
 
     await this.skybox.load();
     await this.model.load();
@@ -64,13 +70,15 @@ export class Renderer {
    * Starts the render loop
    */
   render() {
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
 
     const V = this.camera.getViewMatrix();
     const P = this.camera.getProjectionMatrix();
     const VP = this.camera.getViewProjectionMatrix();
 
+    this.postProcessingFramebuffer.enable();
+    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     // Render the model:
     this.pbrShader.use();
     this.pbrShader.setMat4("VP", VP);
@@ -96,6 +104,14 @@ export class Renderer {
       this.skyboxShader.setMat4("P", P);
       this.skybox.draw(this.skyboxShader);
     }
+    this.postProcessingFramebuffer.disable();
+
+    // Render Post processing
+    this.postProcessingShader.use();
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.postProcessingShader.setInt("forward_render", 0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.postProcessingFramebuffer.getColorBufferTexture());
+    this.postProcessingQuad.draw();
 
     // Request next animation frame
     if (this.shouldRender) {
@@ -112,6 +128,7 @@ export class Renderer {
     this.gl.viewport(0, 0, width, height);
 
     this.camera.updateAspectRatio(width / height);
+    this.postProcessingFramebuffer.resize(width, height);
   }
 
   /**
