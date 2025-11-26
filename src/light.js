@@ -1,4 +1,4 @@
-import { vec3 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 
 /**
  * A lightsource which emmits paralell light rays and therefore is independent of direction.
@@ -18,6 +18,20 @@ export class DirectionalLight {
     this.radiance = vec3.create();
     vec3.scale(this.radiance, color, intensity);
   }
+
+  /**
+   * Calculates the view position of the sun looking at the origin.
+   * @param {number} distance the distance from the origin to the light sources position
+   */
+  calcViewMatrix(distance) {
+    var viewPos = mat4.create();
+    mat4.scale(viewPos, this.direction, -distance);
+
+    var view = mat4.create();
+    mat4.lookAt(view, viewPos, vec3.fromValues(0, 0, 0), vec3.fromValues(0.0, 1.0, 0.0));
+    return view;
+  }
+
 
   /**
    * 

@@ -31,7 +31,7 @@ export class RendererController {
     this.iblToggle = document.getElementById("toggle-ibl");
     this.shadowsToggle = document.getElementById("toggle-shadows");
     this.toneMappingToggle = document.getElementById("toggle-tone-mapping");
-    this.alphaCorrectionToggle = document.getElementById("toggle-alpha-correction");
+    this.gammaCorrectionToggle = document.getElementById("toggle-gamma-correction");
 
   }
 
@@ -67,7 +67,7 @@ export class RendererController {
     this.iblToggle.addEventListener("click", () => this.onIblToggle());
     this.shadowsToggle.addEventListener("click", () => this.onShadowsToggle());
     this.toneMappingToggle.addEventListener("click", () => this.onToneMappingToggle());
-    this.alphaCorrectionToggle.addEventListener("click", () => this.onAlphaCorrectionToggle());
+    this.gammaCorrectionToggle.addEventListener("click", () => this.onGammaCorrectionToggle());
 
   }
 
@@ -188,11 +188,11 @@ export class RendererController {
     }
   }
 
-  onAlphaCorrectionToggle() { // TODO: implement
-    if (this.alphaCorrectionToggle.checked) {
-      this.renderer.renderingOptions.shouldAlphaCorrect = true;
+  onGammaCorrectionToggle() { // TODO: implement
+    if (this.gammaCorrectionToggle.checked) {
+      this.renderer.renderingOptions.shouldGammaCorrect = true;
     } else {
-      this.renderer.renderingOptions.shouldAlphaCorrect = false;
+      this.renderer.renderingOptions.shouldGammaCorrect = false;
     }
   }
 

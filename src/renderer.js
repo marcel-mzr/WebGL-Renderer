@@ -1,12 +1,12 @@
-import { vec3 } from "gl-matrix";
+import { vec3, mat4 } from "gl-matrix";
 import { DirectionalLight } from "./light";
 import { Model } from "./scene-datastructures";
 import { Skybox } from "./skybox";
 import { Shader } from "./shader";
 import { Camera } from "./camera";
 import { createSimpleCubeMesh } from "./simple-mesh";
-import { Framebuffer } from "./framebuffer";
-import { PostProcessingQuad } from "./post-processing-quad";
+import { DepthMapFramebuffer, Framebuffer } from "./framebuffer";
+import { NDCQuad } from "./post-processing-quad";
 
 export class Renderer {
 
@@ -27,6 +27,11 @@ export class Renderer {
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
     this.sun = new DirectionalLight(lightDirection, vec3.fromValues(1.0, 0.94, 0.84), 5.0);
+    const halfSize = 10.0;
+    this.sunProjection = mat4.create();
+    mat4.ortho(this.sunProjection, -halfSize, halfSize, -halfSize, halfSize, 0.1, 20.0);
+    this.sunView = this.sun.calcViewMatrix(3.0);
+
 
     // Construct Light Indicator mesh
     this.lightIndicatorMesh = createSimpleCubeMesh(this.gl, "assets/white.png", "assets/white.png");
@@ -36,15 +41,18 @@ export class Renderer {
     vec3.scale(lightIndicatorPosition, lightDirection, -lightIndicatorDistance);
     this.lightIndicatorMesh.setPosition(lightIndicatorPosition);
 
+    this.postProcessingQuad = new NDCQuad(this.gl);
+    
     this.postProcessingFramebuffer = new Framebuffer(this.gl, this.gl.canvas.width, this.gl.canvas.height);
-    this.postProcessingQuad = new PostProcessingQuad(this.gl);
+    this.depthMapFramebuffer = new DepthMapFramebuffer(this.gl, 1024, 1024);
 
     // Construct shaders
     this.lightIndiatorShader = new Shader(this.gl, "shaders/light.vert", "shaders/light.frag");
     this.skyboxShader = new Shader(this.gl, "shaders/skybox.vert", "shaders/skybox.frag");
     this.pbrShader = new Shader(this.gl, "shaders/pbr_metalic_rough_dir_light.vert", "shaders/pbr_metalic_rough_dir_light.frag");
     this.postProcessingShader = new Shader(this.gl, "shaders/post_processing.vert", "shaders/post_processing.frag");
-    
+    this.depthMapShader = new Shader(this.gl, "shaders/depth_map.vert", "shaders/depth_map.frag");
+
     /** Variable to signal the stop of the render loop*/
     this.shouldRender = true;
   }
@@ -58,6 +66,7 @@ export class Renderer {
     await this.skyboxShader.init();
     await this.pbrShader.init();
     await this.postProcessingShader.init();
+    await this.depthMapShader.init();
 
     await this.skybox.load();
     await this.model.load();
@@ -70,12 +79,23 @@ export class Renderer {
    * Starts the render loop
    */
   render() {
-
-
     const V = this.camera.getViewMatrix();
     const P = this.camera.getProjectionMatrix();
     const VP = this.camera.getViewProjectionMatrix();
 
+    const canvasWidth = this.gl.canvas.width;
+    const canvasHeight = this.gl.canvas.height;
+
+    // Render Depth map from sun
+    this.gl.enable(this.gl.DEPTH_TEST)
+    this.depthMapFramebuffer.enable();
+    this.depthMapShader.use();
+    this.depthMapShader.setMat4("light_view", this.sunView);
+    this.depthMapShader.setMat4("light_projection", this.sunProjection);
+    this.model.draw(this.depthMapShader);
+    this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
+
+    /*
     this.postProcessingFramebuffer.enable();
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -93,9 +113,9 @@ export class Renderer {
     this.model.draw(this.pbrShader);
 
     // Render the light direction indicator
-    this.lightIndiatorShader.use();
-    this.lightIndiatorShader.setMat4("VP", VP);
-    this.lightIndicatorMesh.draw(this.lightIndiatorShader);
+    // this.lightIndiatorShader.use();
+    // this.lightIndiatorShader.setMat4("VP", VP);
+    // this.lightIndicatorMesh.draw(this.lightIndiatorShader);
 
     // Render the skybox
     if (this.renderingOptions.shouldRenderEnvironmentMap) {
@@ -105,12 +125,16 @@ export class Renderer {
       this.skybox.draw(this.skyboxShader);
     }
     this.postProcessingFramebuffer.disable();
+    */
 
     // Render Post processing
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.postProcessingFramebuffer.getColorBufferTexture());
+    // TODO: change:
+    // this.gl.bindTexture(this.gl.TEXTURE_2D, this.postProcessingFramebuffer.getColorBufferTexture());
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+
     this.postProcessingQuad.draw();
 
     // Request next animation frame

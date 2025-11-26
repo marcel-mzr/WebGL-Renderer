@@ -1,8 +1,8 @@
 
 /**
- * A quad filling the screen in Nomalized Device Coordinates used for post processing
+ * A quad filling the screen in Nomalized Device Coordinates
  */
-export class PostProcessingQuad {
+export class NDCQuad {
 
   /**
    * 

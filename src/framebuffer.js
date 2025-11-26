@@ -79,3 +79,57 @@ export class Framebuffer {
   }
 
 }
+
+export class DepthMapFramebuffer {
+  
+  /**
+   * 
+   * @param {WebGL2RenderingContext} gl 
+   * @param {number} width 
+   * @param {number} height 
+   */
+  constructor(gl, width, height) {
+    this.gl = gl;
+    this.width = width;
+    this.height = height;
+    /** @type {WebGLTexture} */
+    this.depthMap = null;
+    /** @type {WebGLFramebuffer} */
+    this.framebuffer = this.gl.createFramebuffer();
+
+    this.setup();
+  }
+
+  setup() {
+    this.depthMap = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMap);
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT32F, this.width, this.height, 0, this.gl.DEPTH_COMPONENT, this.gl.FLOAT, null);
+
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.REPEAT);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.REPEAT);
+
+    // Attach texture to framebuffer
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
+    this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.TEXTURE_2D, this.depthMap, 0);
+    this.gl.drawBuffers([]);
+    this.gl.readBuffer(this.gl.NONE);
+  }
+
+  enable() {
+    this.gl.viewport(0, 0, this.width, this.height);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
+    this.gl.clear(this.gl.DEPTH_BUFFER_BIT);
+  }
+
+  disable(width, height) {
+    this.gl.viewport(0, 0, width, height);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+  }
+
+  getDepthMapTexture() {
+    return this.depthMap;
+  }
+
+}
