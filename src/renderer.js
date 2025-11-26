@@ -27,11 +27,9 @@ export class Renderer {
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
     this.sun = new DirectionalLight(lightDirection, vec3.fromValues(1.0, 0.94, 0.84), 5.0);
-    const halfSize = 10.0;
-    this.sunProjection = mat4.create();
-    mat4.ortho(this.sunProjection, -halfSize, halfSize, -halfSize, halfSize, 0.1, 20.0);
-    this.sunView = this.sun.calcViewMatrix(3.0);
 
+    this.lightSpaceMatrix = null;
+    this.updateLightSpaceMatrix(1.0);
 
     // Construct Light Indicator mesh
     this.lightIndicatorMesh = createSimpleCubeMesh(this.gl, "assets/white.png", "assets/white.png");
@@ -43,8 +41,8 @@ export class Renderer {
 
     this.postProcessingQuad = new NDCQuad(this.gl);
     
-    this.postProcessingFramebuffer = new Framebuffer(this.gl, this.gl.canvas.width, this.gl.canvas.height);
-    this.depthMapFramebuffer = new DepthMapFramebuffer(this.gl, 1024, 1024);
+    this.forwardPassFramebuffer = new Framebuffer(this.gl, this.gl.canvas.width, this.gl.canvas.height);
+    this.depthMapFramebuffer = new DepthMapFramebuffer(this.gl, 4096, 4096);
 
     // Construct shaders
     this.lightIndiatorShader = new Shader(this.gl, "shaders/light.vert", "shaders/light.frag");
@@ -88,22 +86,30 @@ export class Renderer {
 
     // Render Depth map from sun
     this.gl.enable(this.gl.DEPTH_TEST)
+    this.gl.cullFace(this.gl.FRONT);
     this.depthMapFramebuffer.enable();
     this.depthMapShader.use();
-    this.depthMapShader.setMat4("light_view", this.sunView);
-    this.depthMapShader.setMat4("light_projection", this.sunProjection);
+    this.depthMapShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
     this.model.draw(this.depthMapShader);
+    this.gl.cullFace(this.gl.BACK);
     this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
 
-    /*
-    this.postProcessingFramebuffer.enable();
+    // Render the forward pass
+    this.forwardPassFramebuffer.enable();
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     // Render the model:
     this.pbrShader.use();
     this.pbrShader.setMat4("VP", VP);
+    this.pbrShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
     this.pbrShader.setVec3("camera_position", this.camera.getPosition());
     this.pbrShader.setVec3("sun_light_direction", this.sun.getDirection());
+    // Input depth texture as shadow map
+    this.gl.activeTexture(this.gl.TEXTURE10);
+    this.pbrShader.setInt("shadow_map", 10);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+
+
     // Render the sun if enabled
     if (this.renderingOptions.shouldRenderSun) {
       this.pbrShader.setVec3("sun_light_color", this.sun.getRadiance());
@@ -112,11 +118,6 @@ export class Renderer {
     }
     this.model.draw(this.pbrShader);
 
-    // Render the light direction indicator
-    // this.lightIndiatorShader.use();
-    // this.lightIndiatorShader.setMat4("VP", VP);
-    // this.lightIndicatorMesh.draw(this.lightIndiatorShader);
-
     // Render the skybox
     if (this.renderingOptions.shouldRenderEnvironmentMap) {
       this.skyboxShader.use();
@@ -124,16 +125,13 @@ export class Renderer {
       this.skyboxShader.setMat4("P", P);
       this.skybox.draw(this.skyboxShader);
     }
-    this.postProcessingFramebuffer.disable();
-    */
+    this.forwardPassFramebuffer.disable();
 
     // Render Post processing
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
-    // TODO: change:
-    // this.gl.bindTexture(this.gl.TEXTURE_2D, this.postProcessingFramebuffer.getColorBufferTexture());
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.forwardPassFramebuffer.getColorBufferTexture());
 
     this.postProcessingQuad.draw();
 
@@ -152,7 +150,7 @@ export class Renderer {
     this.gl.viewport(0, 0, width, height);
 
     this.camera.updateAspectRatio(width / height);
-    this.postProcessingFramebuffer.resize(width, height);
+    this.forwardPassFramebuffer.resize(width, height);
   }
 
   /**
@@ -171,6 +169,19 @@ export class Renderer {
    */
   setSunIntensity(intensity) {
     this.sun.setIntensity(intensity);
+  }
+
+  /**
+   * @param {number} modelScale 
+   */
+  updateLightSpaceMatrix(modelScale) {
+    const halfSize = 2 * modelScale + 3.0;
+    var sunProjection = mat4.create();
+    mat4.ortho(sunProjection, -halfSize, halfSize, -halfSize, halfSize, 0.1, 20.0);
+    const sunView = this.sun.calcViewMatrix(10.0);
+
+    this.lightSpaceMatrix = mat4.create();
+    mat4.mul(this.lightSpaceMatrix, sunProjection, sunView);
   }
 
   /**

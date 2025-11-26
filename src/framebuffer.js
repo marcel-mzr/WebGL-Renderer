@@ -47,7 +47,6 @@ export class Framebuffer {
     if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) != this.gl.FRAMEBUFFER_COMPLETE) {
       throw new Error("Error creating Framebuffer");
     }
-    
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
 

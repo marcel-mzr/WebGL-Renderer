@@ -11,8 +11,11 @@ out vec3 normal;
 out vec4 tangent;
 out vec2 uv;
 
+out vec4 light_space_position;
+
 uniform mat4 VP;
 uniform mat4 M;
+uniform mat4 light_space_matrix;
 
 void main() {
 
@@ -21,8 +24,9 @@ void main() {
   position = (M * vec4(a_position, 1.0)).xyz;
   normal = vec3(M_transp_inv * vec4(a_normal, 0.0));
   tangent = vec4(vec3(M_transp_inv * vec4(a_tangent.xyz, 0.0)), a_tangent.w);
-
   uv = a_uv;
+
+  light_space_position = light_space_matrix * vec4(position, 1.0);
 
   mat4 MVP = VP * M;
   gl_Position = MVP * vec4(a_position, 1.0);

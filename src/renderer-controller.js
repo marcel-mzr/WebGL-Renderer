@@ -112,6 +112,7 @@ export class RendererController {
   onModelScale() {
     const scaleValue = Number(this.scaleSlider.value);
     this.renderer.getModel().scale(scaleValue);
+    this.renderer.updateLightSpaceMatrix(scaleValue);
     this.scaleDisplay.innerText = scaleValue;
   }
 

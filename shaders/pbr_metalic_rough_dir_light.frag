@@ -9,6 +9,8 @@ in vec4 tangent;
 in vec2 uv;
 in vec3 position;
 
+in vec4 light_space_position;
+
 out vec4 outColor;
 
 uniform vec3 camera_position;
@@ -21,6 +23,7 @@ uniform sampler2D normal_map;
 uniform sampler2D metalness_map;
 uniform sampler2D roughness_map;
 uniform sampler2D ao_map;
+uniform sampler2D shadow_map;
 
 uniform bool has_albedo_map;
 uniform bool has_normal_map;
@@ -38,6 +41,8 @@ float normalDistributionGGX(vec3 N, vec3 H, float roughness);
 float geometrySchlickGGX(vec3 N, vec3 V, float roughness);
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0);
+
+float calcVisibilityFactor();
 
 void main() {
   if (shouldDiscard()) {
@@ -84,7 +89,7 @@ void main() {
   vec3 LO = (k_d * diffuse_brdf + specular_brdf) * light_radiance * dot_N_L;
 
   // Calculate final color
-  vec3 final_color = LO + ambient;
+  vec3 final_color = LO * calcVisibilityFactor() + ambient;
   
   if (should_tone_map) {
     // HDR -> LDR
@@ -188,4 +193,16 @@ vec3 readOutTBNNormal() {
 
   vec3 tangent_space_normal = texture(normal_map, uv).xyz * 2.0 - 1.0;
   return normalize(TBN * tangent_space_normal);
+}
+
+/**
+ * Determines whether the fragment is in direct light (1.0) or not (0.0);
+ */ 
+float calcVisibilityFactor() {
+  vec3 projected_coordinates = light_space_position.xyz / light_space_position.w;
+  projected_coordinates = projected_coordinates * 0.5 + 0.5;
+  float closest_depth = texture(shadow_map, projected_coordinates.xy).r;
+  float current_depth = projected_coordinates.z;
+  float bias = max(0.05 * (1.0 - dot(normal, -sun_light_direction)), 0.005);
+  return current_depth - bias > closest_depth ? 0.0 : 1.0;
 }
