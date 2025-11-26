@@ -92,7 +92,9 @@ export class Renderer {
    * Rendering in the standard rendering mode capturing from the camera
    */
   renderStandardFrame() {
-    this.renderDepthMapFromSun();
+    if (this.renderingOptions.shouldRenderShadows) {
+      this.renderDepthMapFromSun();
+    }
     this.renderForwardPass();
     this.renderPostProcessing();
   }
@@ -129,9 +131,15 @@ export class Renderer {
     this.pbrShader.setVec3("sun_light_direction", this.sun.getDirection());
     // Input depth texture as shadow map
     this.gl.activeTexture(this.gl.TEXTURE10);
-    this.pbrShader.setInt("shadow_map", 10);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
 
+    // Set shadow map uniforms
+    if (this.renderingOptions.shouldRenderShadows) {
+      this.pbrShader.setBool("should_render_shadows", true);
+      this.pbrShader.setInt("shadow_map", 10);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+    } else {
+      this.pbrShader.setBool("should_render_shadows", false);
+    }
 
     // Render the sun if enabled
     if (this.renderingOptions.shouldRenderSun) {

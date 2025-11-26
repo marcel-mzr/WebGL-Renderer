@@ -33,6 +33,7 @@ uniform bool has_ao_map;
 
 uniform bool should_tone_map;
 uniform bool should_alpha_correct;
+uniform bool should_render_shadows;
 
 // Function declarations:
 bool shouldDiscard();
@@ -199,10 +200,14 @@ vec3 readOutTBNNormal() {
  * Determines whether the fragment is in direct light (1.0) or not (0.0);
  */ 
 float calcVisibilityFactor() {
+  if (!should_render_shadows) {
+    return 1.0; 
+  }
+
   vec3 projected_coordinates = light_space_position.xyz / light_space_position.w;
   projected_coordinates = projected_coordinates * 0.5 + 0.5;
   float closest_depth = texture(shadow_map, projected_coordinates.xy).r;
   float current_depth = projected_coordinates.z;
-  float bias = max(0.001 * (1.0 - dot(normal, -sun_light_direction)), 0.0001);
+  float bias = max(0.005 * (1.0 - dot(normal, -sun_light_direction)), 0.0005);
   return current_depth - bias > closest_depth ? 0.0 : 1.0;
 }

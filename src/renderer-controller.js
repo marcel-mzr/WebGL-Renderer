@@ -177,9 +177,9 @@ export class RendererController {
 
   onShadowsToggle() { // TODO: implement
     if (this.shadowsToggle.checked) {
-      console.log("Shadows toggle checked"); 
+      this.renderer.renderingOptions.shouldRenderShadows = true;
     } else {
-      console.log("Shadows toggle unchecked"); 
+      this.renderer.renderingOptions.shouldRenderShadows = false;
     }
   }
 
