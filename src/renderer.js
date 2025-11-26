@@ -92,22 +92,30 @@ export class Renderer {
    * Rendering in the standard rendering mode capturing from the camera
    */
   renderStandardFrame() {
+    this.renderDepthMapFromSun();
+    this.renderForwardPass();
+    this.renderPostProcessing();
+  }
+
+  /**
+   * Render the scene from the perspective of the sun in orthographic manner, capturing the depth map.
+   */
+  renderDepthSunFrame() {
+    this.renderDepthMapFromSun();
+
+    // Depth map to screen quad
+    this.depthMapToScreenQuadShader.use();
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.depthMapToScreenQuadShader.setInt("depth_map", 0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+
+    this.screenQuad.draw();
+  }
+
+  renderForwardPass() {
     const V = this.camera.getViewMatrix();
     const P = this.camera.getProjectionMatrix();
     const VP = this.camera.getViewProjectionMatrix();
-
-    const canvasWidth = this.gl.canvas.width;
-    const canvasHeight = this.gl.canvas.height;
-
-    // Render Depth map from sun
-    this.gl.enable(this.gl.DEPTH_TEST)
-    this.gl.cullFace(this.gl.FRONT);
-    this.depthMapFramebuffer.enable();
-    this.depthMapShader.use();
-    this.depthMapShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
-    this.model.draw(this.depthMapShader);
-    this.gl.cullFace(this.gl.BACK);
-    this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
 
     // - Render the forward pass -
     this.forwardPassFramebuffer.enable();
@@ -141,8 +149,21 @@ export class Renderer {
       this.skybox.draw(this.skyboxShader);
     }
     this.forwardPassFramebuffer.disable();
+  }
 
-    // Render Post processing
+  /** 
+   * Renders the skybox if enabled 
+   */
+  renderSkybox() {
+    if (this.renderingOptions.shouldRenderEnvironmentMap) {
+      this.skyboxShader.use();
+      this.skyboxShader.setMat4("V", V);
+      this.skyboxShader.setMat4("P", P);
+      this.skybox.draw(this.skyboxShader);
+    }
+  }
+
+  renderPostProcessing() {
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
@@ -152,13 +173,12 @@ export class Renderer {
   }
 
   /**
-   * Render the scene from the perspective of the sun in orthographic manner, capturing the depth map.
+   * Renders the depth map from the sun's view direction into the depth map framebuffer
    */
-  renderDepthSunFrame() {
+  renderDepthMapFromSun() {
     const canvasWidth = this.gl.canvas.width;
     const canvasHeight = this.gl.canvas.height;
 
-    // Render Depth map from sun
     this.gl.enable(this.gl.DEPTH_TEST)
     this.gl.cullFace(this.gl.FRONT);
     this.depthMapFramebuffer.enable();
@@ -167,18 +187,7 @@ export class Renderer {
     this.model.draw(this.depthMapShader);
     this.gl.cullFace(this.gl.BACK);
     this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
-
-    // Depth map to screen quad
-    this.depthMapToScreenQuadShader.use();
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.depthMapToScreenQuadShader.setInt("depth_map", 0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
-
-    this.screenQuad.draw();
   }
-
-
-
 
   /**
    * Sets the size of the viewport
