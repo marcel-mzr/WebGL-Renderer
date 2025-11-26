@@ -24,6 +24,7 @@ export class RendererController {
     this.sunIntensitySlider = document.getElementById("sun-intensity");
     this.sunToViewButton = document.getElementById("btn-sun-cam");
     this.envMapToggle = document.getElementById("toggle-env");
+    this.envColorPicker = document.getElementById("env-color-picker");
 
     // Renderer:
     this.aoMapToggle = document.getElementById("toggle-ao");
@@ -43,6 +44,7 @@ export class RendererController {
     this.onCanvasResize();
     this.onModelScale();
     this.onSunIntensityChange();
+    this.onEnvColorPickerChange();
 
     this.setupCallbacks();
   }
@@ -60,6 +62,7 @@ export class RendererController {
     this.sunIntensitySlider.addEventListener("input", () => this.onSunIntensityChange());
     this.sunToViewButton.addEventListener("click", () => this.onSunDirectionChangeClick());
     this.envMapToggle.addEventListener("click", () => this.onEnvMapToggle());
+    this.envColorPicker.addEventListener("input", () => this.onEnvColorPickerChange());
 
     // Renderer Controls
     this.aoMapToggle.addEventListener("click", () => this.onAoMapToggle());
@@ -107,6 +110,8 @@ export class RendererController {
     this.setLoadingSpinnerSpinning(true);
     await this.renderer.loadModelByPath(modelPath);
     this.setLoadingSpinnerSpinning(false);
+
+    this.onModelScale();
   }
 
   onModelScale() {
@@ -116,11 +121,18 @@ export class RendererController {
     this.scaleDisplay.innerText = scaleValue;
   }
 
-  onSunToggle() { // TODO: implement
+  onSunToggle() {
     if (this.sunToggle.checked) {
       this.renderer.renderingOptions.shouldRenderSun = true;
+      this.shadowsToggle.disabled = false;
+      this.shadowsToggle.classList.remove("disabled-row");
+      this.onShadowsToggle();
     } else {
       this.renderer.renderingOptions.shouldRenderSun = false;
+      this.shadowsToggle.checked = false;
+      this.shadowsToggle.disabled = true;
+      this.shadowsToggle.classList.add("disabled-row");
+      this.onShadowsToggle();
     }
   }
 
@@ -149,6 +161,11 @@ export class RendererController {
       this.iblToggle.disabled = true;
       this.iblToggle.classList.add("disabled-row");
     }
+  }
+
+  // TODO: Implement
+  onEnvColorPickerChange() {
+
   }
 
   onAoMapToggle() {
@@ -183,7 +200,7 @@ export class RendererController {
     }
   }
 
-  onToneMappingToggle() { // TODO: implement
+  onToneMappingToggle() {
     if (this.toneMappingToggle.checked) {
       this.renderer.renderingOptions.shouldTonemap = true; 
     } else {
@@ -191,7 +208,7 @@ export class RendererController {
     }
   }
 
-  onGammaCorrectionToggle() { // TODO: implement
+  onGammaCorrectionToggle() {
     if (this.gammaCorrectionToggle.checked) {
       this.renderer.renderingOptions.shouldGammaCorrect = true;
     } else {
