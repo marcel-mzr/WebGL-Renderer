@@ -203,6 +203,6 @@ float calcVisibilityFactor() {
   projected_coordinates = projected_coordinates * 0.5 + 0.5;
   float closest_depth = texture(shadow_map, projected_coordinates.xy).r;
   float current_depth = projected_coordinates.z;
-  float bias = max(0.05 * (1.0 - dot(normal, -sun_light_direction)), 0.005);
+  float bias = max(0.001 * (1.0 - dot(normal, -sun_light_direction)), 0.0001);
   return current_depth - bias > closest_depth ? 0.0 : 1.0;
 }

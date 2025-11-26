@@ -131,6 +131,8 @@ export class RendererController {
 
   onSunDirectionChangeClick() {
     this.renderer.setSunDirectionToCameraViewDirection();
+    const modelScale = Number(this.scaleSlider.value);
+    this.renderer.updateLightSpaceMatrix(modelScale);
   }
 
   onEnvMapToggle() {

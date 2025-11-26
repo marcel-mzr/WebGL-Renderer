@@ -8,6 +8,10 @@ import { createSimpleCubeMesh } from "./simple-mesh";
 import { DepthMapFramebuffer, Framebuffer } from "./framebuffer";
 import { NDCQuad } from "./post-processing-quad";
 
+// Define rendering modes
+const RENDERING_MODE_STANDARD = 0;
+const RENDERING_MODE_DEPTH_SUN = 1;
+
 export class Renderer {
 
   /**
@@ -31,15 +35,7 @@ export class Renderer {
     this.lightSpaceMatrix = null;
     this.updateLightSpaceMatrix(1.0);
 
-    // Construct Light Indicator mesh
-    this.lightIndicatorMesh = createSimpleCubeMesh(this.gl, "assets/white.png", "assets/white.png");
-    this.lightIndicatorMesh.setPosition(lightDirection)
-    const lightIndicatorPosition = vec3.create();
-    const lightIndicatorDistance = 5.0;
-    vec3.scale(lightIndicatorPosition, lightDirection, -lightIndicatorDistance);
-    this.lightIndicatorMesh.setPosition(lightIndicatorPosition);
-
-    this.postProcessingQuad = new NDCQuad(this.gl);
+    this.screenQuad = new NDCQuad(this.gl);
     
     this.forwardPassFramebuffer = new Framebuffer(this.gl, this.gl.canvas.width, this.gl.canvas.height);
     this.depthMapFramebuffer = new DepthMapFramebuffer(this.gl, 4096, 4096);
@@ -50,6 +46,7 @@ export class Renderer {
     this.pbrShader = new Shader(this.gl, "shaders/pbr_metalic_rough_dir_light.vert", "shaders/pbr_metalic_rough_dir_light.frag");
     this.postProcessingShader = new Shader(this.gl, "shaders/post_processing.vert", "shaders/post_processing.frag");
     this.depthMapShader = new Shader(this.gl, "shaders/depth_map.vert", "shaders/depth_map.frag");
+    this.depthMapToScreenQuadShader = new Shader(this.gl, "shaders/depth_map_to_screen_quad.vert", "shaders/depth_map_to_screen_quad.frag");
 
     /** Variable to signal the stop of the render loop*/
     this.shouldRender = true;
@@ -65,10 +62,10 @@ export class Renderer {
     await this.pbrShader.init();
     await this.postProcessingShader.init();
     await this.depthMapShader.init();
+    await this.depthMapToScreenQuadShader.init();
 
     await this.skybox.load();
     await this.model.load();
-    await this.lightIndicatorMesh.load();
 
     this.gl.enable(this.gl.DEPTH_TEST);
   }
@@ -77,6 +74,24 @@ export class Renderer {
    * Starts the render loop
    */
   render() {
+    if (this.renderingOptions.renderingMode == RENDERING_MODE_STANDARD) {
+      this.renderStandardFrame();
+    }
+    else if (this.renderingOptions.renderingMode == RENDERING_MODE_DEPTH_SUN) {
+      this.renderDepthSunFrame();
+    }
+
+    // Request next animation frame
+    if (this.shouldRender) {
+      requestAnimationFrame(() => this.render());
+    }
+  }
+
+
+  /**
+   * Rendering in the standard rendering mode capturing from the camera
+   */
+  renderStandardFrame() {
     const V = this.camera.getViewMatrix();
     const P = this.camera.getProjectionMatrix();
     const VP = this.camera.getViewProjectionMatrix();
@@ -94,7 +109,7 @@ export class Renderer {
     this.gl.cullFace(this.gl.BACK);
     this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
 
-    // Render the forward pass
+    // - Render the forward pass -
     this.forwardPassFramebuffer.enable();
     this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
@@ -133,13 +148,37 @@ export class Renderer {
     this.postProcessingShader.setInt("forward_render", 0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.forwardPassFramebuffer.getColorBufferTexture());
 
-    this.postProcessingQuad.draw();
-
-    // Request next animation frame
-    if (this.shouldRender) {
-      requestAnimationFrame(() => this.render());
-    }
+    this.screenQuad.draw();
   }
+
+  /**
+   * Render the scene from the perspective of the sun in orthographic manner, capturing the depth map.
+   */
+  renderDepthSunFrame() {
+    const canvasWidth = this.gl.canvas.width;
+    const canvasHeight = this.gl.canvas.height;
+
+    // Render Depth map from sun
+    this.gl.enable(this.gl.DEPTH_TEST)
+    this.gl.cullFace(this.gl.FRONT);
+    this.depthMapFramebuffer.enable();
+    this.depthMapShader.use();
+    this.depthMapShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
+    this.model.draw(this.depthMapShader);
+    this.gl.cullFace(this.gl.BACK);
+    this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
+
+    // Depth map to screen quad
+    this.depthMapToScreenQuadShader.use();
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.depthMapToScreenQuadShader.setInt("depth_map", 0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
+
+    this.screenQuad.draw();
+  }
+
+
+
 
   /**
    * Sets the size of the viewport
@@ -175,10 +214,10 @@ export class Renderer {
    * @param {number} modelScale 
    */
   updateLightSpaceMatrix(modelScale) {
-    const halfSize = 2 * modelScale + 3.0;
+    const halfSize = 2 * modelScale;
     var sunProjection = mat4.create();
-    mat4.ortho(sunProjection, -halfSize, halfSize, -halfSize, halfSize, 0.1, 20.0);
-    const sunView = this.sun.calcViewMatrix(10.0);
+    mat4.ortho(sunProjection, -halfSize, halfSize, -halfSize, halfSize, 0.1 * modelScale, 10.0 * modelScale);
+    const sunView = this.sun.calcViewMatrix(2 * modelScale);
 
     this.lightSpaceMatrix = mat4.create();
     mat4.mul(this.lightSpaceMatrix, sunProjection, sunView);
@@ -207,7 +246,9 @@ export class RenderingOptions {
     this.shouldNormalMap = true;
     this.shouldDoIbl = true;
     this.shouldTonemap = true;
-    this.shouldAlphaCorrect = true;
+    this.shouldGammaCorrect = true;
     this.shouldRenderSun = true;
+
+    this.renderingMode = RENDERING_MODE_STANDARD;
   }
 }
