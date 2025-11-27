@@ -21,6 +21,7 @@ export class RendererController {
     this.scaleDisplay = document.getElementById("scale-display");
 
     // Environment Controls
+    this.envSelector = document.getElementById("env-select");
     this.sunToggle = document.getElementById("toggle-sun");
     this.sunIntensitySlider = document.getElementById("sun-intensity");
     this.sunToViewButton = document.getElementById("btn-sun-cam");
@@ -62,6 +63,7 @@ export class RendererController {
     this.scaleSlider.addEventListener("input", () => this.onModelScale());
 
     // Environment Controls
+    this.envSelector.addEventListener("change", async () => this.onEnvSelect());
     this.sunToggle.addEventListener("click", () => this.onSunToggle());
     this.sunIntensitySlider.addEventListener("input", () => this.onSunIntensityChange());
     this.sunToViewButton.addEventListener("click", () => this.onSunDirectionChangeClick());
@@ -123,6 +125,14 @@ export class RendererController {
     this.renderer.getModel().scale(scaleValue);
     this.renderer.updateLightSpaceMatrix(scaleValue);
     this.scaleDisplay.innerText = scaleValue;
+  }
+
+  async onEnvSelect() {
+    const envPath = this.envSelector.value;
+    console.log(envPath);
+    this.setLoadingSpinnerSpinning(true);
+    await this.renderer.loadEnvByPath(envPath);
+    this.setLoadingSpinnerSpinning(false);
   }
 
   onSunToggle() {

@@ -251,6 +251,16 @@ export class Renderer {
     this.model = newModel;
   }
 
+  /**
+   * Loads in a environment map by path
+   * @param {string} path 
+   */
+  async loadEnvByPath(path) {
+    const newSkybox = new Skybox(this.gl, path);
+    await newSkybox.load();
+    this.skybox = newSkybox;
+  }
+
   getModel() {
     return this.model;
   }
