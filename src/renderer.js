@@ -256,7 +256,7 @@ export class Renderer {
    * @param {string} path 
    */
   async loadEnvByPath(path) {
-    const shouldRenderEnv = this.renderingOptions.shouldRenderEnvironmentMap;
+    shouldRenderEnv = this.renderingOptions.shouldRenderEnvironmentMap;
     this.renderingOptions.shouldRenderEnvironmentMap = false;
 
     const newSkybox = new Skybox(this.gl, path);
@@ -264,7 +264,7 @@ export class Renderer {
     this.skybox.delete();
     this.skybox = newSkybox;
 
-    this.renderingOptions.shouldRenderEnvironmentMap = shouldRenderEnv;
+    this.renderingOptions.shouldRenderEnvironmentMap = shouldRenderEnv; 
   }
 
   getModel() {

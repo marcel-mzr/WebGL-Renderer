@@ -1,3 +1,4 @@
 node_modules/
 .vscode/
-assets/whimsical_enchanted_forest_cottage
+public/assets/whimsical_enchanted_forest_cottage
+dist/
