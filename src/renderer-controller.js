@@ -129,7 +129,6 @@ export class RendererController {
 
   async onEnvSelect() {
     const envPath = this.envSelector.value;
-    console.log(envPath);
     this.setLoadingSpinnerSpinning(true);
     await this.renderer.loadEnvByPath(envPath);
     this.setLoadingSpinnerSpinning(false);

@@ -92,6 +92,14 @@ export class Skybox {
     this.gl.depthFunc(this.gl.LESS);
   }
 
+  /**
+   * Deletes the Skybox texture and frees texture memory
+   */
+  delete() {
+    this.gl.deleteTexture(this.cubemap);
+    this.cubemap = null;
+  }
+
 }
 
 
