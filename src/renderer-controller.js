@@ -41,6 +41,9 @@ export class RendererController {
    * Initializes the RendererController and sets up the callbacks
    */
   init() {
+    // Hide initial loadup spinner
+    this.setLoadingSpinnerSpinning(false);
+
     // Call necessary functions on init
     this.onCanvasResize();
     this.onModelScale();
