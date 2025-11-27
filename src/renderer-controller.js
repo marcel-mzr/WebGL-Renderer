@@ -10,6 +10,9 @@ export class RendererController {
   constructor(renderer) {
     this.renderer = renderer;
 
+    // Used to clear the memory of the old model if selected model changes
+    this.activeModelURL = null
+
     // Canvas
     this.webglCanvas = document.getElementById("webgl-canvas");
     this.webglCanvasWrapper = document.getElementById("canvas-wrapper");
@@ -17,6 +20,7 @@ export class RendererController {
 
     // Model Controls
     this.modelSelector = document.getElementById("model-select");
+    this.modelUpload = document.getElementById("model-upload");
     this.scaleSlider = document.getElementById("model-scale");
     this.scaleDisplay = document.getElementById("scale-display");
 
@@ -61,6 +65,7 @@ export class RendererController {
     // Model Controls
     this.modelSelector.addEventListener("change", async () => this.onModelSelect());
     this.scaleSlider.addEventListener("input", () => this.onModelScale());
+    this.modelUpload.addEventListener("change", async () => this.onModelUpload());
 
     // Environment Controls
     this.envSelector.addEventListener("change", async () => this.onEnvSelect());
@@ -117,6 +122,24 @@ export class RendererController {
     await this.renderer.loadModelByPath(modelPath);
     this.setLoadingSpinnerSpinning(false);
 
+    this.onModelScale();
+  }
+
+  async onModelUpload() {
+    const modelFile = this.modelUpload.files[0];
+    if (!modelFile) return;
+    // Clean up old model
+    if (this.activeModelURL) {
+      URL.revokeObjectURL(this.activeModelURL);
+      this.activeModelURL = null;
+    }
+
+    this.modelSelector.value = "Custom Model";
+    this.activeModelURL = URL.createObjectURL(modelFile);
+    this.setLoadingSpinnerSpinning(true);
+    await this.renderer.loadModelByPath(this.activeModelURL);
+    this.setLoadingSpinnerSpinning(false);
+    
     this.onModelScale();
   }
 

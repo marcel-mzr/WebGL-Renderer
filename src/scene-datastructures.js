@@ -56,12 +56,21 @@ export class Model {
         /** @type {THREE.Mesh} */
         const threeMesh = child;
         
-        const albedoMapTexture = threeMesh.material.map;
-        const metalnessMapTexture = threeMesh.material.metalnessMap;
-        const normalMapTexture = threeMesh.material.normalMap;
-        const roughnessMapTexture = threeMesh.material.roughnessMap;
-        const aoMapTexture = threeMesh.material.aoMap;
+        // Checks if the name of the textures are present and renames them if needed
+        const validateAndRenameTexture = (tex) => {
+          if (tex && !tex.name) {
+            tex.name = tex.uuid;
+          }
+          return tex;
+        };
 
+        const albedoMapTexture = validateAndRenameTexture(threeMesh.material.map);
+        const metalnessMapTexture = validateAndRenameTexture(threeMesh.material.metalnessMap);
+        const normalMapTexture = validateAndRenameTexture(threeMesh.material.normalMap);
+        const roughnessMapTexture = validateAndRenameTexture(threeMesh.material.roughnessMap);
+        const aoMapTexture = validateAndRenameTexture(threeMesh.material.aoMap);
+
+        console.log(albedoMapTexture?.name);
         // Setup textures of the mesh if they exist
         if (albedoMapTexture?.name && !this.textures.has(albedoMapTexture.name)) {
           this.textures.set(albedoMapTexture.name, this.setupTexture(albedoMapTexture));
