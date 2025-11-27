@@ -1,5 +1,6 @@
 import { Renderer } from "./renderer";
 import { Model } from "./scene-datastructures";
+import { hexToRGBVec } from "./utils";
 
 export class RendererController {
 
@@ -165,7 +166,9 @@ export class RendererController {
 
   // TODO: Implement
   onEnvColorPickerChange() {
-
+    const hexColor = this.envColorPicker.value;
+    const color = hexToRGBVec(hexColor);
+    this.renderer.setEnvColor(color);
   }
 
   onAoMapToggle() {

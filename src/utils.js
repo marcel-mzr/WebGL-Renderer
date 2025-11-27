@@ -25,7 +25,7 @@ export function toVec3(threeVector3) {
   return vec3.fromValues(v[0], v[1], v[2]);
 }
 
-function hexToRGBVec(hex) {
+export function hexToRGBVec(hex) {
   if (hex.startsWith('#')) hex = hex.slice(1);
   const r = parseInt(hex.slice(0, 2), 16) / 255;
   const g = parseInt(hex.slice(2, 4), 16) / 255;

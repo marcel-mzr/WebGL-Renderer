@@ -27,6 +27,7 @@ export class Renderer {
 
     this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf", this.renderingOptions);
     this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
+    this.envColor = vec3.create();
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
@@ -121,7 +122,7 @@ export class Renderer {
 
     // - Render the forward pass -
     this.forwardPassFramebuffer.enable();
-    this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    this.gl.clearColor(this.envColor[0], this.envColor[1], this.envColor[2], 1.0);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     // Render the model:
     this.pbrShader.use();
@@ -252,6 +253,14 @@ export class Renderer {
 
   getModel() {
     return this.model;
+  }
+
+  /**
+   *
+   * @param {vec3} color 
+   */
+  setEnvColor(color) {
+    this.envColor = color;
   }
 }
 
