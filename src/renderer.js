@@ -25,8 +25,8 @@ export class Renderer {
 
     this.renderingOptions = new RenderingOptions();
 
-    this.model = new Model(this.gl, "assets/survival_guitar_backpack/scene.gltf", this.renderingOptions);
-    this.skybox = new Skybox(this.gl, "assets/fishermans_bastion_skybox");
+    this.model = new Model(this.gl, "assets/models/lion_head_4k/lion_head_4k.gltf", this.renderingOptions);
+    this.skybox = new Skybox(this.gl, "assets/environment_maps/fishermans_bastion_skybox");
     this.envColor = vec3.create();
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
