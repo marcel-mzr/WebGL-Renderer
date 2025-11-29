@@ -31,7 +31,6 @@
             <option value="assets/models/BarberShopChair_01_4k/BarberShopChair_01_4k.gltf">Barber Shop Chair</option>
             <option value="assets/models/marble_bust_01_4k/marble_bust_01_4k.gltf">Marble Bust</option>
             <option value="assets/models/Television_01_4k/Television_01_4k.gltf">Television</option>
-
           </select>
           
           <button class="action-btn" onclick="document.getElementById('model-upload').click()">Load Model File</button>
@@ -78,7 +77,10 @@
 
         <div class="control-group">
           <h3>Renderer</h3>
-          
+          <select id="rendering-mode-select" style="margin-bottom: 10px;">
+            <option value="RENDERING_MODE_STANDARD">Mode: Standard</option>
+            <option value="RENDERING_MODE_DEPTH_SUN">Mode: Sun Depth Map</option>
+          </select>
           <div class="control-row">
             <label for="toggle-ao">Ambient Occlusion</label>
             <input type="checkbox" id="toggle-ao" checked>

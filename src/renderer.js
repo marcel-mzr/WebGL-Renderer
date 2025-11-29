@@ -1,7 +1,7 @@
 import { vec3, mat4 } from "gl-matrix";
 import { DirectionalLight } from "./light";
 import { Model } from "./scene-datastructures";
-import { Skybox } from "./skybox";
+import { HDRCubeMap, Skybox } from "./environment";
 import { Shader } from "./shader";
 import { Camera } from "./camera";
 import { createSimpleCubeMesh } from "./simple-mesh";
@@ -9,8 +9,8 @@ import { DepthMapFramebuffer, Framebuffer } from "./framebuffer";
 import { NDCQuad } from "./post-processing-quad";
 
 // Define rendering modes
-const RENDERING_MODE_STANDARD = 0;
-const RENDERING_MODE_DEPTH_SUN = 1;
+export const RENDERING_MODE_STANDARD = 0;
+export const RENDERING_MODE_DEPTH_SUN = 1;
 
 export class Renderer {
 
@@ -26,7 +26,10 @@ export class Renderer {
     this.renderingOptions = new RenderingOptions();
 
     this.model = new Model(this.gl, "assets/models/lion_head_4k/lion_head_4k.gltf", this.renderingOptions);
-    this.skybox = new Skybox(this.gl, "assets/environment_maps/fishermans_bastion_skybox");
+    this.skybox = new Skybox(this.gl);
+
+    this.hdrCubeMap = new HDRCubeMap(this.gl, "assets/hdris/mirrored_hall_4k.hdr");
+
     this.envColor = vec3.create();
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
@@ -65,7 +68,8 @@ export class Renderer {
     await this.depthMapShader.init();
     await this.depthMapToScreenQuadShader.init();
 
-    await this.skybox.load();
+    await this.skybox.loadByCubemapTexturesPath("assets/environment_maps/fishermans_bastion_skybox");
+    await this.hdrCubeMap.init();
     await this.model.load();
 
     this.gl.enable(this.gl.DEPTH_TEST);
@@ -155,21 +159,11 @@ export class Renderer {
       this.skyboxShader.use();
       this.skyboxShader.setMat4("V", V);
       this.skyboxShader.setMat4("P", P);
-      this.skybox.draw(this.skyboxShader);
+      // TODO: Change
+      this.hdrCubeMap.draw(this.skyboxShader);
+      // this.skybox.draw(this.skyboxShader);
     }
     this.forwardPassFramebuffer.disable();
-  }
-
-  /** 
-   * Renders the skybox if enabled 
-   */
-  renderSkybox() {
-    if (this.renderingOptions.shouldRenderEnvironmentMap) {
-      this.skyboxShader.use();
-      this.skyboxShader.setMat4("V", V);
-      this.skyboxShader.setMat4("P", P);
-      this.skybox.draw(this.skyboxShader);
-    }
   }
 
   renderPostProcessing() {
@@ -259,8 +253,8 @@ export class Renderer {
     const shouldRenderEnv = this.renderingOptions.shouldRenderEnvironmentMap;
     this.renderingOptions.shouldRenderEnvironmentMap = false;
 
-    const newSkybox = new Skybox(this.gl, path);
-    await newSkybox.load();
+    const newSkybox = new Skybox(this.gl);
+    await newSkybox.loadByCubemapTexturesPath("assets/environment_maps/fishermans_bastion_skybox");
     this.skybox.delete();
     this.skybox = newSkybox;
 

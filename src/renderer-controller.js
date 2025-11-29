@@ -1,4 +1,4 @@
-import { Renderer } from "./renderer";
+import { Renderer, RENDERING_MODE_DEPTH_SUN, RENDERING_MODE_STANDARD } from "./renderer";
 import { Model } from "./scene-datastructures";
 import { hexToRGBVec } from "./utils";
 
@@ -33,6 +33,7 @@ export class RendererController {
     this.envColorPicker = document.getElementById("env-color-picker");
 
     // Renderer:
+    this.renderingModeSelector = document.getElementById("rendering-mode-select");
     this.aoMapToggle = document.getElementById("toggle-ao");
     this.normalMapToggle = document.getElementById("toggle-normal");
     this.iblToggle = document.getElementById("toggle-ibl");
@@ -76,6 +77,7 @@ export class RendererController {
     this.envColorPicker.addEventListener("input", () => this.onEnvColorPickerChange());
 
     // Renderer Controls
+    this.renderingModeSelector.addEventListener("change", () => this.onRenderingModeSelect());
     this.aoMapToggle.addEventListener("click", () => this.onAoMapToggle());
     this.normalMapToggle.addEventListener("click", () => this.onNormalMapToggle());
     this.iblToggle.addEventListener("click", () => this.onIblToggle());
@@ -199,11 +201,21 @@ export class RendererController {
     }
   }
 
-  // TODO: Implement
   onEnvColorPickerChange() {
     const hexColor = this.envColorPicker.value;
     const color = hexToRGBVec(hexColor);
     this.renderer.setEnvColor(color);
+  }
+
+  onRenderingModeSelect() {
+    const renderingMode = this.renderingModeSelector.value;
+
+    if (renderingMode === "RENDERING_MODE_STANDARD") {
+      this.renderer.renderingOptions.renderingMode = RENDERING_MODE_STANDARD;
+    }
+    else if (renderingMode === "RENDERING_MODE_DEPTH_SUN") {
+      this.renderer.renderingOptions.renderingMode = RENDERING_MODE_DEPTH_SUN;
+    }
   }
 
   onAoMapToggle() {
