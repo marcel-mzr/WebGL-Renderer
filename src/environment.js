@@ -140,6 +140,12 @@ export class HDRCubeMap {
     this.skybox.draw(skyboxShader);
   }
 
+  delete() {
+    this.skybox.delete();
+    this.gl.deleteFramebuffer(this.cubemapCaptureFramebuffer);
+    this.gl.deleteTexture(this.cubemapTexture);
+  }
+
   /**
    * Renders the HDRI to the cubemap capturing it in a cubemap texture
    */

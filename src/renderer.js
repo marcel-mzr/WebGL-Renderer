@@ -66,7 +66,6 @@ export class Renderer {
     await this.depthMapShader.init();
     await this.depthMapToScreenQuadShader.init();
 
-    await this.skybox.loadByCubemapTexturesPath("assets/environment_maps/fishermans_bastion_skybox");
     await this.hdrCubeMap.init();
     await this.model.load();
 
@@ -157,9 +156,7 @@ export class Renderer {
       this.skyboxShader.use();
       this.skyboxShader.setMat4("V", V);
       this.skyboxShader.setMat4("P", P);
-      // TODO: Change
       this.hdrCubeMap.draw(this.skyboxShader);
-      // this.skybox.draw(this.skyboxShader);
     }
     this.forwardPassFramebuffer.disable();
   }
@@ -251,10 +248,11 @@ export class Renderer {
     const shouldRenderEnv = this.renderingOptions.shouldRenderEnvironmentMap;
     this.renderingOptions.shouldRenderEnvironmentMap = false;
 
-    const newSkybox = new Skybox(this.gl);
-    await newSkybox.loadByCubemapTexturesPath("assets/environment_maps/fishermans_bastion_skybox");
-    this.skybox.delete();
-    this.skybox = newSkybox;
+    const newHDRCubeMap = new HDRCubeMap(this.gl, path);
+    await newHDRCubeMap.init();
+
+    this.hdrCubeMap.delete();
+    this.hdrCubeMap = newHDRCubeMap;
 
     this.renderingOptions.shouldRenderEnvironmentMap = shouldRenderEnv; 
   }
