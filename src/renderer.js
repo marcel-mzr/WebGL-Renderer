@@ -4,7 +4,6 @@ import { Model } from "./scene-datastructures";
 import { HDRCubeMap, Skybox } from "./environment";
 import { Shader } from "./shader";
 import { Camera } from "./camera";
-import { createSimpleCubeMesh } from "./simple-mesh";
 import { DepthMapFramebuffer, Framebuffer } from "./framebuffer";
 import { NDCQuad } from "./post-processing-quad";
 
@@ -26,7 +25,6 @@ export class Renderer {
     this.renderingOptions = new RenderingOptions();
 
     this.model = new Model(this.gl, "assets/models/lion_head_4k/lion_head_4k.gltf", this.renderingOptions);
-    this.skybox = new Skybox(this.gl);
 
     this.hdrCubeMap = new HDRCubeMap(this.gl, "assets/hdris/mirrored_hall_4k.hdr");
 
@@ -183,12 +181,12 @@ export class Renderer {
     const canvasHeight = this.gl.canvas.height;
 
     this.gl.enable(this.gl.DEPTH_TEST)
-    this.gl.cullFace(this.gl.FRONT);
+    // this.gl.cullFace(this.gl.FRONT); // TODO: check why this not works
     this.depthMapFramebuffer.enable();
     this.depthMapShader.use();
     this.depthMapShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
     this.model.draw(this.depthMapShader);
-    this.gl.cullFace(this.gl.BACK);
+    // this.gl.cullFace(this.gl.BACK);
     this.depthMapFramebuffer.disable(canvasWidth, canvasHeight);
   }
 
