@@ -32,7 +32,7 @@ export class Framebuffer {
     // Setup color buffer
     this.colorBufferTexture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.colorBufferTexture);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGB, this.width, this.height, 0, this.gl.RGB, this.gl.UNSIGNED_BYTE, null);
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA16F, this.width, this.height, 0, this.gl.RGBA, this.gl.HALF_FLOAT, null);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
     this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
     this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.colorBufferTexture, 0);

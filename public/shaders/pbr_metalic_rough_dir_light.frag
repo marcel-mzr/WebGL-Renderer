@@ -31,8 +31,6 @@ uniform bool has_metalness_map;
 uniform bool has_roughness_map;
 uniform bool has_ao_map;
 
-uniform bool should_tone_map;
-uniform bool should_alpha_correct;
 uniform bool should_render_shadows;
 
 // Function declarations:
@@ -91,15 +89,6 @@ void main() {
 
   // Calculate final color
   vec3 final_color = LO * calcVisibilityFactor() + ambient;
-  
-  if (should_tone_map) {
-    // HDR -> LDR
-    final_color = final_color / (final_color + vec3(1.0));
-  }
-  if (should_alpha_correct) {
-    // Transform color back from linear color space to gamma space
-    final_color = pow(final_color, vec3(1.0/2.2));
-  }
   
   outColor = vec4(final_color, 1.0);
 }

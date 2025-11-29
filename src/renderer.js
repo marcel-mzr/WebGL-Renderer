@@ -165,6 +165,10 @@ export class Renderer {
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
+
+    this.postProcessingShader.setBool("should_tone_map", this.renderingOptions.shouldTonemap);
+    this.postProcessingShader.setBool("should_gamma_correct", this.renderingOptions.shouldGammaCorrect);
+
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.forwardPassFramebuffer.getColorBufferTexture());
 
     this.screenQuad.draw();
