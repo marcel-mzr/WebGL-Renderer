@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGl Renderer</title>
 
-  <script type="module" crossorigin src="/WebGL-Renderer/assets/index-BS3ksE19.js"></script>
+  <script type="module" crossorigin src="/WebGL-Renderer/assets/index-DPVGWG59.js"></script>
   <link rel="stylesheet" crossorigin href="/WebGL-Renderer/assets/index-BcS1rsEx.css">
 </head>
 <body>
@@ -31,7 +31,6 @@
             <option value="assets/models/BarberShopChair_01_4k/BarberShopChair_01_4k.gltf">Barber Shop Chair</option>
             <option value="assets/models/marble_bust_01_4k/marble_bust_01_4k.gltf">Marble Bust</option>
             <option value="assets/models/Television_01_4k/Television_01_4k.gltf">Television</option>
-
           </select>
           
           <button class="action-btn" onclick="document.getElementById('model-upload').click()">Load Model File</button>
@@ -49,8 +48,8 @@
         <div class="control-group">
           <h3>Environment</h3>
           <select id="env-select" style="margin-bottom: 10px;">
-            <option value="assets/environment_maps/fishermans_bastion_skybox">Fishermans Bastion</option>
-            <option value="assets/environment_maps/storforsen2_skybox">Storforsen</option>
+            <option value="assets/hdris/mirrored_hall_4k.hdr">Mirrored Hall</option>
+            <option value="assets/hdris/citrus_orchard_road_puresky_4k.hdr">Sky 1</option>
           </select>
 
           <div class="control-row">
@@ -78,7 +77,10 @@
 
         <div class="control-group">
           <h3>Renderer</h3>
-          
+          <select id="rendering-mode-select" style="margin-bottom: 10px;">
+            <option value="RENDERING_MODE_STANDARD">Mode: Standard</option>
+            <option value="RENDERING_MODE_DEPTH_SUN">Mode: Sun Depth Map</option>
+          </select>
           <div class="control-row">
             <label for="toggle-ao">Ambient Occlusion</label>
             <input type="checkbox" id="toggle-ao" checked>
