@@ -44,7 +44,6 @@ export class Renderer {
     this.depthMapFramebuffer = new DepthMapFramebuffer(this.gl, 4096, 4096);
 
     // Construct shaders
-    this.lightIndiatorShader = new Shader(this.gl, "shaders/light.vert", "shaders/light.frag");
     this.skyboxShader = new Shader(this.gl, "shaders/skybox.vert", "shaders/skybox.frag");
     this.pbrShader = new Shader(this.gl, "shaders/pbr_metalic_rough_dir_light.vert", "shaders/pbr_metalic_rough_dir_light.frag");
     this.postProcessingShader = new Shader(this.gl, "shaders/post_processing.vert", "shaders/post_processing.frag");
@@ -60,7 +59,6 @@ export class Renderer {
    * - Initializes the scene to render
    */
   async init() {
-    await this.lightIndiatorShader.init();
     await this.skyboxShader.init();
     await this.pbrShader.init();
     await this.postProcessingShader.init();
