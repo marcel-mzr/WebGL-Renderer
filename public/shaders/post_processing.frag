@@ -7,6 +7,7 @@ in vec2 uv;
 out vec4 out_color;
 
 uniform sampler2D forward_render;
+uniform float exposure;
 uniform bool should_tone_map;
 uniform bool should_gamma_correct;
 
@@ -20,9 +21,7 @@ vec3 acesToneMapping(vec3 x) {
 }
 
 void main() {
-  float exposure = 1.0;
   vec3 final_color = exposure * texture(forward_render, uv).rgb;
-
 
   if (should_tone_map) {
     // HDR -> LDR

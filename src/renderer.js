@@ -29,6 +29,7 @@ export class Renderer {
     this.hdrCubeMap = new HDRCubeMap(this.gl, "assets/hdris/mirrored_hall_4k.hdr");
 
     this.envColor = vec3.create();
+    this.exposure = 1.0;
 
     const lightDirection = vec3.fromValues(-2.0, -2.0, -2.0);
     vec3.normalize(lightDirection, lightDirection);
@@ -165,7 +166,7 @@ export class Renderer {
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
-
+    this.postProcessingShader.setFloat("exposure", this.exposure);
     this.postProcessingShader.setBool("should_tone_map", this.renderingOptions.shouldTonemap);
     this.postProcessingShader.setBool("should_gamma_correct", this.renderingOptions.shouldGammaCorrect);
 
@@ -271,6 +272,14 @@ export class Renderer {
    */
   setEnvColor(color) {
     this.envColor = color;
+  }
+
+  /**
+   * 
+   * @param {number} value 
+   */
+  setExposure(value) {
+    this.exposure = value;
   }
 }
 

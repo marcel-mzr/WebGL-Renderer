@@ -38,6 +38,9 @@ export class RendererController {
     this.normalMapToggle = document.getElementById("toggle-normal");
     this.iblToggle = document.getElementById("toggle-ibl");
     this.shadowsToggle = document.getElementById("toggle-shadows");
+
+    this.exposureSlider = document.getElementById("exposure-slider");
+    this.exposureDisplay = document.getElementById("exposure-display");
     this.toneMappingToggle = document.getElementById("toggle-tone-mapping");
     this.gammaCorrectionToggle = document.getElementById("toggle-gamma-correction");
 
@@ -55,6 +58,7 @@ export class RendererController {
     this.onModelScale();
     this.onSunIntensityChange();
     this.onEnvColorPickerChange();
+    this.onExposureChange();
 
     this.setupCallbacks();
   }
@@ -82,9 +86,11 @@ export class RendererController {
     this.normalMapToggle.addEventListener("click", () => this.onNormalMapToggle());
     this.iblToggle.addEventListener("click", () => this.onIblToggle());
     this.shadowsToggle.addEventListener("click", () => this.onShadowsToggle());
+    
+    // Post Processing Controls
+    this.exposureSlider.addEventListener("input", () => this.onExposureChange());
     this.toneMappingToggle.addEventListener("click", () => this.onToneMappingToggle());
     this.gammaCorrectionToggle.addEventListener("click", () => this.onGammaCorrectionToggle());
-
   }
 
   /**
@@ -248,6 +254,13 @@ export class RendererController {
     } else {
       this.renderer.renderingOptions.shouldRenderShadows = false;
     }
+  }
+
+  onExposureChange() {
+    const exposureValue = Number(this.exposureSlider.value);
+    this.exposureDisplay.innerText = exposureValue;
+
+    this.renderer.setExposure(exposureValue);
   }
 
   onToneMappingToggle() {
