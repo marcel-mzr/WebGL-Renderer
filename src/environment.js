@@ -13,6 +13,8 @@ export class HDRCubeMap {
   constructor(gl, hdriPath) {
     this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
     this.IRRADIANCE_CUBEMAP_WIDTH = 32;
+    this.PREFILTERED_CUBEMAP_WIDTH = 128;
+    this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 5;
 
     this.gl = gl;
     this.hdriPath = hdriPath;
@@ -31,6 +33,9 @@ export class HDRCubeMap {
     this.envCubemapTexture = null;
     /** @type {WebGLTexture} */
     this.irradianceCubemapTexture = null;
+    /** @type {WebGLTexture} */
+    this.prefilteredEnvCubemapTexture = null;
+
 
     /**
      * @type {WebGLTexture}
@@ -55,6 +60,7 @@ export class HDRCubeMap {
     // Shaders
     this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangular_to_cubemap.vert", "shaders/equirectangular_to_cubemap.frag");
     this.envToIrradianceCubemapShader = new Shader(this.gl, "shaders/env_to_irradiance_cubemap.vert", "shaders/env_to_irradiance_cubemap.frag");
+    this.prefilterEnvCubemapShader = new Shader(this.gl, "shaders/prefilter_env_cubemap.vert", "shaders/prefilter_env_cubemap.frag");
   }
 
   async init() {
@@ -63,11 +69,14 @@ export class HDRCubeMap {
   
     await this.equirectangularToCubemapShader.init();
     await this.envToIrradianceCubemapShader.init();
+    await this.prefilterEnvCubemapShader.init();
 
     this.createEnvironmentCubemap();
-    this.createIrradianceMap();
 
-    this.skybox.loadByTexture(this.envCubemapTexture);
+    this.createIrradianceMap();
+    this.createPrefilteredEnvCubemap();
+
+    this.skybox.loadByTexture(this.prefilteredEnvCubemapTexture);
   }
 
   /**
@@ -86,12 +95,13 @@ export class HDRCubeMap {
   }
 
   /**
-   * Captures all 6 sides of a cubemap given a shader and a cube face size as faceWidth
+   * Captures all 6 sides of a cubemap given a shader and a cube face size and stores the result in the supplied cubemap texture
    * @param {Shader} shader - the shader to be used for rendering the faces
    * @param {number} faceWidth - the Width of one quadratic face
    * @param {WebGlTexture} cubemapTexture - The cubemap texture to render to
+   * @param {number} mipmapLevel - The level of the mipmap to render to
    */
-  createCubemap(shader, faceWidth, cubemapTexture) {
+  createCubemap(shader, faceWidth, cubemapTexture, mipmapLevel = 0) {
     const viewportParameters = this.gl.getParameter(this.gl.VIEWPORT);
     const oldWidth = viewportParameters[2];
     const oldHeight = viewportParameters[3];
@@ -103,7 +113,7 @@ export class HDRCubeMap {
     for (var i = 0; i < 6; ++i) {
       shader.setMat4("V", this.cubemapCaptureViewMatrices[i]);
       this.gl.framebufferTexture2D(
-        this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapTexture, 0
+        this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapTexture, mipmapLevel
       );
       this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
       this.environmentCube.draw();
@@ -141,6 +151,29 @@ export class HDRCubeMap {
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.envCubemapTexture);
 
     this.createCubemap(this.envToIrradianceCubemapShader, this.IRRADIANCE_CUBEMAP_WIDTH, this.irradianceCubemapTexture);
+  }
+
+  /**
+   * Creates the prefiltered environment cubemap that is used in the specualar part of image based lighting
+   */
+  createPrefilteredEnvCubemap() {
+    this.prefilteredEnvCubemapTexture = this.createCubemapTexture(this.PREFILTERED_CUBEMAP_WIDTH, true);
+
+    this.prefilterEnvCubemapShader.use();
+    this.prefilterEnvCubemapShader.setInt("environment_map", 0);
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.envCubemapTexture);
+
+    for (var mipLevel = 0; mipLevel < this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS; ++mipLevel) {
+      var mipLevelFaceWidth = this.PREFILTERED_CUBEMAP_WIDTH * Math.pow(0.5, mipLevel);
+
+      this.setupCubemapCaptureFramebuffer(mipLevelFaceWidth);
+
+      var roughness = mipLevel / (this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS - 1.0);
+
+      this.prefilterEnvCubemapShader.setFloat("roughness", roughness);
+      this.createCubemap(this.prefilterEnvCubemapShader, mipLevelFaceWidth, this.prefilteredEnvCubemapTexture, mipLevel);
+    }
   }
 
 
@@ -224,9 +257,10 @@ export class HDRCubeMap {
   /**
    * Creates a empty cubemap texture used to render to
    * @param {number} faceWidth - the width of one quadratic face
+   * @param {boolean} mipmapped - Indicator if mapmapping should be included into the texture
    * @returns {WebGLTexture} - The created cubemap texture
    */
-  createCubemapTexture(faceWidth) {
+  createCubemapTexture(faceWidth, mipmapped = false) {
     const cubemapTexture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, cubemapTexture);
 
@@ -240,8 +274,14 @@ export class HDRCubeMap {
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
     this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+
+    if (mipmapped) {
+      this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+      this.gl.generateMipmap(this.gl.TEXTURE_CUBE_MAP);
+    } else {
+      this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    }
 
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
     
