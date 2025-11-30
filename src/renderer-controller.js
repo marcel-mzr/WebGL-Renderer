@@ -240,11 +240,11 @@ export class RendererController {
     }
   }
 
-  onIblToggle() { // TODO: implement
+  onIblToggle() {
     if (this.iblToggle.checked) {
-      console.log("Ibl toggle checked"); 
+      this.renderer.renderingOptions.shouldDoIbl = true;
     } else {
-      console.log("Ibl toggle unchecked"); 
+      this.renderer.renderingOptions.shouldDoIbl = false;
     }
   }
 

@@ -24,6 +24,7 @@ uniform sampler2D metalness_map;
 uniform sampler2D roughness_map;
 uniform sampler2D ao_map;
 uniform sampler2D shadow_map;
+uniform samplerCube irradiance_map;
 
 uniform bool has_albedo_map;
 uniform bool has_normal_map;
@@ -32,6 +33,7 @@ uniform bool has_roughness_map;
 uniform bool has_ao_map;
 
 uniform bool should_render_shadows;
+uniform bool should_do_ibl;
 
 // Function declarations:
 bool shouldDiscard();
@@ -40,6 +42,8 @@ float normalDistributionGGX(vec3 N, vec3 H, float roughness);
 float geometrySchlickGGX(vec3 N, vec3 V, float roughness);
 float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0);
+vec3 fresnelSchlickRoughness(vec3 N, vec3 V, vec3 F0, float roughness);
+
 
 float calcVisibilityFactor();
 
@@ -73,6 +77,17 @@ void main() {
   float G = geometrySmith(N, V, L, roughness);
   vec3 F = fresnelSchlick(H, V, F0);
 
+
+  vec3 ambient;
+  if (should_do_ibl) {
+    vec3 ambient_k_s = fresnelSchlickRoughness(N, V, F0, roughness);
+    vec3 ambient_k_d = 1.0 - ambient_k_s;
+    vec3 irradiance = texture(irradiance_map, N).rgb;
+    ambient = ambient_k_d * irradiance * albedo * ao_factor;
+  } else {
+    ambient = vec3(0.03) * albedo * ao_factor;
+  }
+
   // Calculate diffuse contribution coefficient
   vec3 k_d = (vec3(1.0) - F) * (1.0 - metalness);
 
@@ -81,8 +96,8 @@ void main() {
 
   vec3 specular_brdf = specular_brdf_num / specular_brdf_den;
   vec3 diffuse_brdf = albedo / PI;
-  // TODO: change when doing IBL
-  vec3 ambient = vec3(0.03) * albedo * ao_factor;
+  
+
   // Light contribution towards camera
   float dot_N_L = max(dot(N, L), 0.0);
   vec3 LO = (k_d * diffuse_brdf + specular_brdf) * light_radiance * dot_N_L;
@@ -166,6 +181,18 @@ float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 fresnelSchlick(vec3 H, vec3 V, vec3 F0) {
   float dot_H_V = max(dot(H, V), 0.0);
   return F0 + (1.0 - F0) * pow(1.0 - dot_H_V, 5.0);
+}
+
+/**
+ * Approximates the fresnel effect for IBL.
+ *
+ * N - The normal vector
+ * V - The vector pointing to the camera
+ * F0 - response factor (normal incidence) that happens at a view angle of 0 degree
+ */
+vec3 fresnelSchlickRoughness(vec3 N, vec3 V, vec3 F0, float roughness) {
+  float dot_N_V = max(dot(N, V), 0.0);
+  return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - dot_N_V, 0.0, 1.0), 5.0);
 }
 
 /**

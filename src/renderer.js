@@ -130,16 +130,26 @@ export class Renderer {
     this.pbrShader.setMat4("light_space_matrix", this.lightSpaceMatrix);
     this.pbrShader.setVec3("camera_position", this.camera.getPosition());
     this.pbrShader.setVec3("sun_light_direction", this.sun.getDirection());
-    // Input depth texture as shadow map
-    this.gl.activeTexture(this.gl.TEXTURE10);
-
+    
     // Set shadow map uniforms
     if (this.renderingOptions.shouldRenderShadows) {
       this.pbrShader.setBool("should_render_shadows", true);
+      // Input depth texture as shadow map
+      this.gl.activeTexture(this.gl.TEXTURE10);
       this.pbrShader.setInt("shadow_map", 10);
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMapFramebuffer.getDepthMapTexture());
     } else {
       this.pbrShader.setBool("should_render_shadows", false);
+    }
+
+    // Set IBL Uniforms
+    if (this.renderingOptions.shouldDoIbl && this.renderingOptions.shouldRenderEnvironmentMap) {
+      this.pbrShader.setBool("should_do_ibl", true);
+      this.gl.activeTexture(this.gl.TEXTURE11);
+      this.pbrShader.setInt("irradiance_map", 11);
+      this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.hdrCubeMap.getIrradianceMapTexture());
+    } else {
+      this.pbrShader.setBool("should_do_ibl", false);
     }
 
     // Render the sun if enabled

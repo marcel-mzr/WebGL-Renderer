@@ -3,10 +3,10 @@ precision highp float;
 
 in vec3 tex_coords;
 
-out vec4 outColor;
+out vec4 frag_color;
 
 uniform samplerCube skybox;
 
 void main() {
-  outColor = texture(skybox, tex_coords);
+  frag_color = texture(skybox, tex_coords);
 }

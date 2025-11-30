@@ -12,6 +12,7 @@ export class HDRCubeMap {
    */
   constructor(gl, hdriPath) {
     this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
+    this.IRRADIANCE_CUBEMAP_WIDTH = 32;
 
     this.gl = gl;
     this.hdriPath = hdriPath;
@@ -28,6 +29,8 @@ export class HDRCubeMap {
 
     /** @type {WebGLTexture} */
     this.envCubemapTexture = null;
+    /** @type {WebGLTexture} */
+    this.irradianceCubemapTexture = null;
 
     /**
      * @type {WebGLTexture}
@@ -50,16 +53,21 @@ export class HDRCubeMap {
     mat4.perspective(this.cubemapCaptureProjectionMatrix, Math.PI / 2.0, 1.0, 0.1, 10.0);
 
     // Shaders
-    this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangularToCubemap.vert", "shaders/equirectangularToCubemap.frag");
+    this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangular_to_cubemap.vert", "shaders/equirectangular_to_cubemap.frag");
+    this.envToIrradianceCubemapShader = new Shader(this.gl, "shaders/env_to_irradiance_cubemap.vert", "shaders/env_to_irradiance_cubemap.frag");
   }
 
   async init() {
     const hdrImage = await this.loadHDRIData(this.hdriPath);
     this.setupHDRITexture(hdrImage);
-    this.setupCubemapCaptureFramebuffer(); // TODO: maybe needs to be called outside of async function
+  
     await this.equirectangularToCubemapShader.init();
+    await this.envToIrradianceCubemapShader.init();
 
     this.createEnvironmentCubemap();
+    this.createIrradianceMap();
+
+    this.skybox.loadByTexture(this.envCubemapTexture);
   }
 
   /**
@@ -91,6 +99,7 @@ export class HDRCubeMap {
     this.gl.viewport(0, 0, faceWidth, faceWidth);
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
 
+    shader.setMat4("P", this.cubemapCaptureProjectionMatrix);
     for (var i = 0; i < 6; ++i) {
       shader.setMat4("V", this.cubemapCaptureViewMatrices[i]);
       this.gl.framebufferTexture2D(
@@ -102,33 +111,36 @@ export class HDRCubeMap {
 
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     this.gl.viewport(0, 0, oldWidth, oldHeight);
-
   }
 
   /**
    * Creates the cubemap that is seen as the skybox
    */
   createEnvironmentCubemap() {
+    this.setupCubemapCaptureFramebuffer(this.ENV_CUBEMAP_WIDTH);
+    this.envCubemapTexture = this.createCubemapTexture(this.ENV_CUBEMAP_WIDTH);
+
     this.equirectangularToCubemapShader.use();
     this.equirectangularToCubemapShader.setInt("equirectangular_map", 0);
-    this.equirectangularToCubemapShader.setMat4("P", this.cubemapCaptureProjectionMatrix);
-
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
 
-    this.envCubemapTexture = this.createCubemapTexture(this.ENV_CUBEMAP_WIDTH);
-
     this.createCubemap(this.equirectangularToCubemapShader, this.ENV_CUBEMAP_WIDTH, this.envCubemapTexture);
-
-    // Initialize the Skybox with the rendered cubemap texture
-    this.skybox.loadByTexture(this.envCubemapTexture);
   }
 
   /**
    * Creates the irradiance map used for diffuse image based lighting.
    */
   createIrradianceMap() {
+    this.setupCubemapCaptureFramebuffer(this.IRRADIANCE_CUBEMAP_WIDTH);
+    this.irradianceCubemapTexture = this.createCubemapTexture(this.IRRADIANCE_CUBEMAP_WIDTH);
 
+    this.envToIrradianceCubemapShader.use();
+    this.envToIrradianceCubemapShader.setInt("environment_map", 0);
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.envCubemapTexture);
+
+    this.createCubemap(this.envToIrradianceCubemapShader, this.IRRADIANCE_CUBEMAP_WIDTH, this.irradianceCubemapTexture);
   }
 
 
@@ -188,13 +200,22 @@ export class HDRCubeMap {
     return viewMatrices;
   }
 
-  setupCubemapCaptureFramebuffer() {
-    this.cubemapCaptureFramebuffer = this.gl.createFramebuffer();
+  /**
+   * 
+   * @param {number} faceWidth - the width of one quadratic face 
+   */
+  setupCubemapCaptureFramebuffer(faceWidth) {
+    if (this.cubemapCaptureFramebuffer === null) {
+      this.cubemapCaptureFramebuffer = this.gl.createFramebuffer();
+    }
+    if (this.cubemapCaptureRenderbuffer !== null) {
+      this.gl.deleteRenderbuffer(this.cubemapCaptureRenderbuffer);
+    }
     this.cubemapCaptureRenderbuffer = this.gl.createRenderbuffer();
 
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
     this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, this.cubemapCaptureRenderbuffer);
-    this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT24, this.ENV_CUBEMAP_WIDTH, this.ENV_CUBEMAP_WIDTH);
+    this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT24, faceWidth, faceWidth);
     this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, this.cubemapCaptureRenderbuffer);
 
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
@@ -202,6 +223,7 @@ export class HDRCubeMap {
 
   /**
    * Creates a empty cubemap texture used to render to
+   * @param {number} faceWidth - the width of one quadratic face
    * @returns {WebGLTexture} - The created cubemap texture
    */
   createCubemapTexture(faceWidth) {
@@ -224,6 +246,14 @@ export class HDRCubeMap {
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
     
     return cubemapTexture;
+  }
+
+  /**
+   * 
+   * @returns {WebGLTexture} 
+   */
+  getIrradianceMapTexture () {
+    return this.irradianceCubemapTexture;
   }
 
 }
