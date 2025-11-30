@@ -3,6 +3,232 @@ import { Shader } from "./shader";
 import * as THREE from 'three';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 
+export class HDRCubeMap {
+
+  /**
+   * 
+   * @param {WebGL2RenderingContext} gl 
+   * @param {string} hdriPath - The path the the HDR Image
+   */
+  constructor(gl, hdriPath) {
+    this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
+
+    this.gl = gl;
+    this.hdriPath = hdriPath;
+
+    this.skybox = new Skybox(this.gl);;
+    this.environmentCube = new EnvironmentMapCube(this.gl);
+
+    const extBuffer = this.gl.getExtension("EXT_color_buffer_float");
+    if (!extBuffer) console.warn("EXT_color_buffer_float not supported! Cubemap generation might fail.");
+
+    // Required to use LINEAR filtering on float textures
+    const extLinear = this.gl.getExtension("OES_texture_float_linear");
+    if (!extLinear) console.warn("OES_texture_float_linear not supported! Result might look blocky.");
+
+    /** @type {WebGLTexture} */
+    this.envCubemapTexture = null;
+
+    /**
+     * @type {WebGLTexture}
+     */
+    this.hdriTexture = null;
+
+    /**
+     * The framebuffer that captures the cubemap of the hdri
+     * @type {WebGLFramebuffer}
+     */
+    this.cubemapCaptureFramebuffer = null;
+    /**
+     * @type {WebGLRenderbuffer}
+     */
+    this.cubemapCaptureRenderbuffer = null;
+
+    // Transforms
+    this.cubemapCaptureViewMatrices = this.setupCubemapCaptureViewMatrices();
+    this.cubemapCaptureProjectionMatrix = mat4.create();
+    mat4.perspective(this.cubemapCaptureProjectionMatrix, Math.PI / 2.0, 1.0, 0.1, 10.0);
+
+    // Shaders
+    this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangularToCubemap.vert", "shaders/equirectangularToCubemap.frag");
+  }
+
+  async init() {
+    const hdrImage = await this.loadHDRIData(this.hdriPath);
+    this.setupHDRITexture(hdrImage);
+    this.setupCubemapCaptureFramebuffer(); // TODO: maybe needs to be called outside of async function
+    await this.equirectangularToCubemapShader.init();
+
+    this.createEnvironmentCubemap();
+  }
+
+  /**
+   * Draws the skybox of the cubemap
+   * @param {Shader} skyboxShader 
+   */
+  draw(skyboxShader) {
+    this.skybox.draw(skyboxShader);
+  }
+
+  delete() {
+    this.skybox.delete();
+    this.gl.deleteFramebuffer(this.cubemapCaptureFramebuffer);
+    this.gl.deleteRenderbuffer(this.cubemapCaptureRenderbuffer)
+    this.gl.deleteTexture(this.envCubemapTexture);
+  }
+
+  /**
+   * Captures all 6 sides of a cubemap given a shader and a cube face size as faceWidth
+   * @param {Shader} shader - the shader to be used for rendering the faces
+   * @param {number} faceWidth - the Width of one quadratic face
+   * @param {WebGlTexture} cubemapTexture - The cubemap texture to render to
+   */
+  createCubemap(shader, faceWidth, cubemapTexture) {
+    const viewportParameters = this.gl.getParameter(this.gl.VIEWPORT);
+    const oldWidth = viewportParameters[2];
+    const oldHeight = viewportParameters[3];
+    
+    this.gl.viewport(0, 0, faceWidth, faceWidth);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
+
+    for (var i = 0; i < 6; ++i) {
+      shader.setMat4("V", this.cubemapCaptureViewMatrices[i]);
+      this.gl.framebufferTexture2D(
+        this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapTexture, 0
+      );
+      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+      this.environmentCube.draw();
+    }
+
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.gl.viewport(0, 0, oldWidth, oldHeight);
+
+  }
+
+  /**
+   * Creates the cubemap that is seen as the skybox
+   */
+  createEnvironmentCubemap() {
+    this.equirectangularToCubemapShader.use();
+    this.equirectangularToCubemapShader.setInt("equirectangular_map", 0);
+    this.equirectangularToCubemapShader.setMat4("P", this.cubemapCaptureProjectionMatrix);
+
+    this.gl.activeTexture(this.gl.TEXTURE0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
+
+    this.envCubemapTexture = this.createCubemapTexture(this.ENV_CUBEMAP_WIDTH);
+
+    this.createCubemap(this.equirectangularToCubemapShader, this.ENV_CUBEMAP_WIDTH, this.envCubemapTexture);
+
+    // Initialize the Skybox with the rendered cubemap texture
+    this.skybox.loadByTexture(this.envCubemapTexture);
+  }
+
+  /**
+   * Creates the irradiance map used for diffuse image based lighting.
+   */
+  createIrradianceMap() {
+
+  }
+
+
+  /**
+   * Loads a HDR Image
+   * @param {string} path 
+   * @returns {width: number, height: number, data: Float32Array}
+   */
+  async loadHDRIData(path) {
+    const loader = new HDRLoader();
+    loader.setDataType(THREE.FloatType);
+
+    const threeTexture = await loader.loadAsync(path);
+
+    const width = threeTexture.image.width;
+    const height = threeTexture.image.height;
+    const data = threeTexture.image.data;
+
+    // Free memory
+    threeTexture.dispose();
+    return {width, height, data};
+  }
+
+  /**
+   * 
+   * @param {width: number, height: number, data: Float32Array} hdrImage 
+   */
+  setupHDRITexture(hdrImage) {
+    this.hdriTexture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
+    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA16F, hdrImage.width, hdrImage.height, 0, this.gl.RGBA, this.gl.FLOAT, hdrImage.data);
+
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+
+    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
+
+  }
+
+  setupCubemapCaptureViewMatrices() {
+    const viewMatrices = [mat4.create(), mat4.create(), mat4.create(), mat4.create(), mat4.create(), mat4.create()];
+    const origin = vec3.fromValues(0, 0, 0);
+    // matrices capturing the cube sides along the x axis
+    mat4.lookAt(viewMatrices[0], origin, vec3.fromValues(1.0, 0.0, 0.0), vec3.fromValues(0.0, -1.0, 0.0));
+    mat4.lookAt(viewMatrices[1], origin, vec3.fromValues(-1.0, 0.0, 0.0), vec3.fromValues(0.0, -1.0, 0.0));
+    // matrices capturing the cube sides along the y axis
+    mat4.lookAt(viewMatrices[2], origin, vec3.fromValues(0.0, 1.0, 0.0), vec3.fromValues(0.0, 0.0, 1.0));
+    mat4.lookAt(viewMatrices[3], origin, vec3.fromValues(0.0, -1.0, 0.0), vec3.fromValues(0.0, 0.0, -1.0));
+    // matrices capturing the cube sides along the z axis
+    mat4.lookAt(viewMatrices[4], origin, vec3.fromValues(0.0, 0.0, 1.0), vec3.fromValues(0.0, -1.0, 0.0));
+    mat4.lookAt(viewMatrices[5], origin, vec3.fromValues(0.0, 0.0, -1.0), vec3.fromValues(0.0, -1.0, 0.0));
+
+    return viewMatrices;
+  }
+
+  setupCubemapCaptureFramebuffer() {
+    this.cubemapCaptureFramebuffer = this.gl.createFramebuffer();
+    this.cubemapCaptureRenderbuffer = this.gl.createRenderbuffer();
+
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
+    this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, this.cubemapCaptureRenderbuffer);
+    this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT24, this.ENV_CUBEMAP_WIDTH, this.ENV_CUBEMAP_WIDTH);
+    this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, this.cubemapCaptureRenderbuffer);
+
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+  }
+
+  /**
+   * Creates a empty cubemap texture used to render to
+   * @returns {WebGLTexture} - The created cubemap texture
+   */
+  createCubemapTexture(faceWidth) {
+    const cubemapTexture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, cubemapTexture);
+
+    for (var i = 0; i < 6; ++i) {
+      this.gl.texImage2D(
+        this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA16F,
+        faceWidth, faceWidth, 0, this.gl.RGBA, this.gl.FLOAT, null
+      );
+    }
+
+    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
+    
+    return cubemapTexture;
+  }
+
+}
+
+
 export class Skybox {
 
   /**
@@ -78,196 +304,6 @@ export class Skybox {
   }
 
 }
-
-export class HDRCubeMap {
-
-  /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
-   * @param {string} hdriPath - The path the the HDR Image
-   */
-  constructor(gl, hdriPath) {
-    this.CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
-
-    this.gl = gl;
-    this.hdriPath = hdriPath;
-
-    this.skybox = new Skybox(this.gl);;
-    this.environmentCube = new EnvironmentMapCube(this.gl);
-
-    const extBuffer = this.gl.getExtension("EXT_color_buffer_float");
-    if (!extBuffer) console.warn("EXT_color_buffer_float not supported! Cubemap generation might fail.");
-
-    // Required to use LINEAR filtering on float textures
-    const extLinear = this.gl.getExtension("OES_texture_float_linear");
-    if (!extLinear) console.warn("OES_texture_float_linear not supported! Result might look blocky.");
-
-    /** @type {WebGLTexture} */
-    this.cubemapTexture = null;
-
-    /**
-     * @type {WebGLTexture}
-     */
-    this.hdriTexture = null;
-
-    /**
-     * The framebuffer that captures the cubemap of the hdri
-     * @type {WebGLFramebuffer}
-     */
-    this.cubemapCaptureFramebuffer = null;
-
-    this.cubemapCaptureViewMatrices = this.setupCubemapCaptureViewMatrices();
-    this.cubemapCaptureProjectionMatrix = mat4.create();
-    mat4.perspective(this.cubemapCaptureProjectionMatrix, Math.PI / 2.0, 1.0, 0.1, 10.0);
-
-    this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangularToCubemap.vert", "shaders/equirectangularToCubemap.frag");
-  }
-
-  async init() {
-    const hdrImage = await this.loadHDRIData(this.hdriPath);
-    this.setupHDRITexture(hdrImage);
-    this.setupCubemapCaptureFramebuffer(); // TODO: maybe needs to be called outside of async function
-    await this.equirectangularToCubemapShader.init();
-
-    this.createCubemap();
-  }
-
-  /**
-   * Draws the skybox of the cubemap
-   * @param {Shader} skyboxShader 
-   */
-  draw(skyboxShader) {
-    this.skybox.draw(skyboxShader);
-  }
-
-  delete() {
-    this.skybox.delete();
-    this.gl.deleteFramebuffer(this.cubemapCaptureFramebuffer);
-    this.gl.deleteTexture(this.cubemapTexture);
-  }
-
-  /**
-   * Renders the HDRI to the cubemap capturing it in a cubemap texture
-   */
-  createCubemap() {
-    const viewportParameters = this.gl.getParameter(this.gl.VIEWPORT);
-    const oldWidth = viewportParameters[2];
-    const oldHeight = viewportParameters[3];
-
-    this.equirectangularToCubemapShader.use();
-    this.equirectangularToCubemapShader.setInt("equirectangular_map", 0);
-    this.equirectangularToCubemapShader.setMat4("P", this.cubemapCaptureProjectionMatrix);
-    
-    this.gl.activeTexture(this.gl.TEXTURE0);
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
-
-    this.gl.viewport(0, 0, this.CUBEMAP_WIDTH, this.CUBEMAP_WIDTH);
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
-
-    for (var i = 0; i < 6; ++i) {
-      this.equirectangularToCubemapShader.setMat4("V", this.cubemapCaptureViewMatrices[i]);
-      this.gl.framebufferTexture2D(
-        this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, this.cubemapTexture, 0
-      );
-      this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-      this.environmentCube.draw();
-    }
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-    this.gl.viewport(0, 0, oldWidth, oldHeight);
-
-    // Initialize the Skybox with the rendered cubemap texture
-    this.skybox.loadByTexture(this.cubemapTexture);
-  }
-
-  /**
-   * Loads a HDR Image
-   * @param {string} path 
-   * @returns {width: number, height: number, data: Float32Array}
-   */
-  async loadHDRIData(path) {
-    const loader = new HDRLoader();
-    loader.setDataType(THREE.FloatType);
-
-    const threeTexture = await loader.loadAsync(path);
-
-    const width = threeTexture.image.width;
-    const height = threeTexture.image.height;
-    const data = threeTexture.image.data;
-
-    // Free memory
-    threeTexture.dispose();
-    return {width, height, data};
-  }
-
-  setupCubemapCaptureViewMatrices() {
-    const viewMatrices = [mat4.create(), mat4.create(), mat4.create(), mat4.create(), mat4.create(), mat4.create()];
-    const origin = vec3.fromValues(0, 0, 0);
-    // matrices capturing the cube sides along the x axis
-    mat4.lookAt(viewMatrices[0], origin, vec3.fromValues(1.0, 0.0, 0.0), vec3.fromValues(0.0, -1.0, 0.0));
-    mat4.lookAt(viewMatrices[1], origin, vec3.fromValues(-1.0, 0.0, 0.0), vec3.fromValues(0.0, -1.0, 0.0));
-    // matrices capturing the cube sides along the y axis
-    mat4.lookAt(viewMatrices[2], origin, vec3.fromValues(0.0, 1.0, 0.0), vec3.fromValues(0.0, 0.0, 1.0));
-    mat4.lookAt(viewMatrices[3], origin, vec3.fromValues(0.0, -1.0, 0.0), vec3.fromValues(0.0, 0.0, -1.0));
-    // matrices capturing the cube sides along the z axis
-    mat4.lookAt(viewMatrices[4], origin, vec3.fromValues(0.0, 0.0, 1.0), vec3.fromValues(0.0, -1.0, 0.0));
-    mat4.lookAt(viewMatrices[5], origin, vec3.fromValues(0.0, 0.0, -1.0), vec3.fromValues(0.0, -1.0, 0.0));
-
-    return viewMatrices;
-  }
-
-
-  /**
-   * 
-   * @param {width: number, height: number, data: Float32Array} hdrImage 
-   */
-  setupHDRITexture(hdrImage) {
-    this.hdriTexture = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, true);
-    this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA16F, hdrImage.width, hdrImage.height, 0, this.gl.RGBA, this.gl.FLOAT, hdrImage.data);
-
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-
-    this.gl.bindTexture(this.gl.TEXTURE_2D, null);
-    this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
-
-  }
-
-  setupCubemapCaptureFramebuffer() {
-    this.cubemapCaptureFramebuffer = this.gl.createFramebuffer();
-    const cubemapCaptureRenderbuffer = this.gl.createRenderbuffer();
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
-    this.gl.bindRenderbuffer(this.gl.RENDERBUFFER, cubemapCaptureRenderbuffer);
-    this.gl.renderbufferStorage(this.gl.RENDERBUFFER, this.gl.DEPTH_COMPONENT24, this.CUBEMAP_WIDTH, this.CUBEMAP_WIDTH);
-    this.gl.framebufferRenderbuffer(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.RENDERBUFFER, cubemapCaptureRenderbuffer);
-
-    // Setup cubemap textures 
-    this.cubemapTexture = this.gl.createTexture();
-    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.cubemapTexture);
-
-    for (var i = 0; i < 6; ++i) {
-      this.gl.texImage2D(
-        this.gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, this.gl.RGBA16F,
-        this.CUBEMAP_WIDTH, this.CUBEMAP_WIDTH, 0, this.gl.RGBA, this.gl.FLOAT, null
-      );
-    }
-
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_WRAP_R, this.gl.CLAMP_TO_EDGE);
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
-    this.gl.texParameteri(this.gl.TEXTURE_CUBE_MAP, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
-
-    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-  }
-
-}
-
 
 class EnvironmentMapCube {
 
