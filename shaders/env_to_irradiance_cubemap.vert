@@ -10,5 +10,8 @@ uniform mat4 P;
 
 void main() {
   position = a_position;
-  gl_Position = P * V * vec4(position, 1.0);
+  vec4 viewSpacePos = V * vec4(a_position, 0.0);
+  vec4 clipSpacePos = P * vec4(viewSpacePos.xyz, 1.0);
+
+  gl_Position = clipSpacePos.xyww;
 }
