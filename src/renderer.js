@@ -145,9 +145,19 @@ export class Renderer {
     // Set IBL Uniforms
     if (this.renderingOptions.shouldDoIbl && this.renderingOptions.shouldRenderEnvironmentMap) {
       this.pbrShader.setBool("should_do_ibl", true);
+      
       this.gl.activeTexture(this.gl.TEXTURE11);
       this.pbrShader.setInt("irradiance_map", 11);
-      this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.hdrCubeMap.getIrradianceMapTexture());
+      this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.hdrCubeMap.getIrradianceCubemapTexture());
+
+      this.gl.activeTexture(this.gl.TEXTURE12);
+      this.pbrShader.setInt("prefiltered_env_map", 12);
+      this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.hdrCubeMap.getPrefilteredEnvCubemapTexture());
+
+      this.gl.activeTexture(this.gl.TEXTURE13);
+      this.pbrShader.setInt("brdf_lut_map", 13);
+      this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdrCubeMap.getBrdfLutTexture());
+
     } else {
       this.pbrShader.setBool("should_do_ibl", false);
     }
@@ -174,11 +184,11 @@ export class Renderer {
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.postProcessingShader.setInt("forward_render", 0);
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.forwardPassFramebuffer.getColorBufferTexture());
+
     this.postProcessingShader.setFloat("exposure", this.exposure);
     this.postProcessingShader.setBool("should_tone_map", this.renderingOptions.shouldTonemap);
     this.postProcessingShader.setBool("should_gamma_correct", this.renderingOptions.shouldGammaCorrect);
-
-    this.gl.bindTexture(this.gl.TEXTURE_2D, this.forwardPassFramebuffer.getColorBufferTexture());
 
     this.screenQuad.draw();
   }

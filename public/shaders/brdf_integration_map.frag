@@ -1,15 +1,12 @@
 #version 300 es
 precision highp float;
 
+// Constants
 const float PI = 3.14159265359;
 
-in vec3 position;
+in vec2 uv;
 
-out vec4 frag_color;
-
-uniform samplerCube environment_map;
-uniform float roughness;
-uniform float resolution;
+out vec2 frag_color;
 
 /**
  * Calculates the Van Der Corput radical inverse (mirror at decimal point) of the bits given
@@ -73,39 +70,79 @@ float normalDistributionGGX(vec3 N, vec3 H, float roughness) {
   return alpha_squared / denominator;
 }
 
-void main() {
-  vec3 N = normalize(position);
-  vec3 R = N;
-  vec3 V = R;
+/**
+ * A statistical approximation of how much light gets blocked by 
+ * geometry obstruction and geometry shadowing.
+ * 
+ * N - The normal vector
+ * V - The vector pointing to a light source or to the camera (depending on usage)
+ * roughness - the roughness value of the fragment
+ */
+float geometrySchlickGGX(vec3 N, vec3 V, float roughness) {
+  // use perceptual roughness in the schlick geometry approximation
+  float alpha = roughness;
+  float k = (alpha * alpha) / 2.0;
+
+  float dot_N_V = max(dot(N, V), 0.0);
+  float denominator = dot_N_V * (1.0 - k) + k;
+
+  return dot_N_V / denominator;
+}
+
+/**
+ * Combines geometry obstruction and geometry shadowing.
+ * 
+ * N - The normal vector
+ * V - The vector pointing to the camera
+ * L - The vector pointing to the light source
+ * roughness - the roughness value of the fragment
+ */
+float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+  float geo_obstruction = geometrySchlickGGX(N, V, roughness);
+  float geo_shadowing = geometrySchlickGGX(N, L, roughness);
+  return geo_obstruction * geo_shadowing;
+}
+
+vec2 integrateBRDF(float dot_N_V, float roughness)
+{
+  vec3 V;
+  V.x = sqrt(1.0 - dot_N_V * dot_N_V);
+  V.y = 0.0;
+  V.z = dot_N_V;
+
+  float A = 0.0;
+  float B = 0.0;
+
+  vec3 N = vec3(0.0, 0.0, 1.0);
 
   const uint SAMPLE_COUNT = 1024u;
-  float total_weight = 0.0;
-  vec3 prefiltered_color = vec3(0.0);
-
-  for (uint i = 0u; i < SAMPLE_COUNT; ++i) {
+  for(uint i = 0u; i < SAMPLE_COUNT; ++i)
+  {
     vec2 xi = hammersley(i, SAMPLE_COUNT);
-    vec3 H = importanceSampleGGX(xi, N, roughness);
-    vec3 L = reflect(-V, H);
+    vec3 H  = importanceSampleGGX(xi, N, roughness);
+    vec3 L  = normalize(2.0 * dot(V, H) * H - V);
 
-    float dot_N_L = max(dot(N, L), 0.0);
-    // Check if light direction is in hemisphere
-    if (dot_N_L > 0.0) {
+    float dot_N_L = max(L.z, 0.0);
+    float dot_N_H = max(H.z, 0.0);
+    float dot_V_H = max(dot(V, H), 0.0);
 
-      float D = normalDistributionGGX(N, H, roughness);
-      float dot_N_H = max(dot(N, H), 0.0);
-      float dot_H_V = max(dot(H, V), 0.0);
-      float pdf = D * dot_N_H / (4.0 * dot_H_V) + 0.0001;
+    if(dot_N_L > 0.0)
+    {
+      float G = geometrySmith(N, V, L, roughness);
+      float G_Vis = (G * dot_V_H) / (dot_N_H * dot_N_V);
+      float Fc = pow(1.0 - dot_V_H, 5.0);
 
-      float solid_angle_texel = 4.0 * PI / (6.0 * resolution * resolution);
-      float solid_angle_sample = 1.0 / (float(SAMPLE_COUNT) * pdf + 0.0001);
-
-      float mip_level = roughness == 0.0 ? 0.0 : 0.5 * log2(solid_angle_sample / solid_angle_texel);
-
-      prefiltered_color += textureLod(environment_map, L, mip_level).rgb * dot_N_L;
-      total_weight += dot_N_L;
+      A += (1.0 - Fc) * G_Vis;
+      B += Fc * G_Vis;
     }
   }
+  A /= float(SAMPLE_COUNT);
+  B /= float(SAMPLE_COUNT);
+  return vec2(A, B);
+}
 
-  prefiltered_color /= total_weight;
-  frag_color = vec4(prefiltered_color, 1.0);
+
+void main() {
+  vec2 integratedBRDF = integrateBRDF(uv.x, uv.y);
+  frag_color = integratedBRDF;
 }

@@ -2,6 +2,7 @@ import { mat4, vec3 } from "gl-matrix";
 import { Shader } from "./shader";
 import * as THREE from 'three';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
+import { NDCQuad } from "./post-processing-quad";
 
 export class HDRCubeMap {
 
@@ -13,14 +14,16 @@ export class HDRCubeMap {
   constructor(gl, hdriPath) {
     this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
     this.IRRADIANCE_CUBEMAP_WIDTH = 32;
-    this.PREFILTERED_CUBEMAP_WIDTH = 128;
+    this.PREFILTERED_CUBEMAP_WIDTH = 512;
     this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 5;
+    this.BRDF_LUT_TEXTURE_WIDTH = 512;
 
     this.gl = gl;
     this.hdriPath = hdriPath;
 
     this.skybox = new Skybox(this.gl);;
     this.environmentCube = new EnvironmentMapCube(this.gl);
+    this.screenQuad = new NDCQuad(this.gl);
 
     const extBuffer = this.gl.getExtension("EXT_color_buffer_float");
     if (!extBuffer) console.warn("EXT_color_buffer_float not supported! Cubemap generation might fail.");
@@ -35,7 +38,8 @@ export class HDRCubeMap {
     this.irradianceCubemapTexture = null;
     /** @type {WebGLTexture} */
     this.prefilteredEnvCubemapTexture = null;
-
+    /** @type {WebGLTexture} */
+    this.brdfLUTTexture = null;
 
     /**
      * @type {WebGLTexture}
@@ -61,6 +65,7 @@ export class HDRCubeMap {
     this.equirectangularToCubemapShader = new Shader(this.gl, "shaders/equirectangular_to_cubemap.vert", "shaders/equirectangular_to_cubemap.frag");
     this.envToIrradianceCubemapShader = new Shader(this.gl, "shaders/env_to_irradiance_cubemap.vert", "shaders/env_to_irradiance_cubemap.frag");
     this.prefilterEnvCubemapShader = new Shader(this.gl, "shaders/prefilter_env_cubemap.vert", "shaders/prefilter_env_cubemap.frag");
+    this.brdfIntegrationMapShader = new Shader(this.gl, "shaders/brdf_integration_map.vert", "shaders/brdf_integration_map.frag");
   }
 
   async init() {
@@ -70,13 +75,15 @@ export class HDRCubeMap {
     await this.equirectangularToCubemapShader.init();
     await this.envToIrradianceCubemapShader.init();
     await this.prefilterEnvCubemapShader.init();
+    await this.brdfIntegrationMapShader.init();
 
     this.createEnvironmentCubemap();
 
     this.createIrradianceMap();
     this.createPrefilteredEnvCubemap();
+    this.createBrdfLUTTexture();
 
-    this.skybox.loadByTexture(this.prefilteredEnvCubemapTexture);
+    this.skybox.loadByTexture(this.envCubemapTexture);
   }
 
   /**
@@ -128,7 +135,7 @@ export class HDRCubeMap {
    */
   createEnvironmentCubemap() {
     this.setupCubemapCaptureFramebuffer(this.ENV_CUBEMAP_WIDTH);
-    this.envCubemapTexture = this.createCubemapTexture(this.ENV_CUBEMAP_WIDTH);
+    this.envCubemapTexture = this.createCubemapTexture(this.ENV_CUBEMAP_WIDTH, true);
 
     this.equirectangularToCubemapShader.use();
     this.equirectangularToCubemapShader.setInt("equirectangular_map", 0);
@@ -136,6 +143,11 @@ export class HDRCubeMap {
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.hdriTexture);
 
     this.createCubemap(this.equirectangularToCubemapShader, this.ENV_CUBEMAP_WIDTH, this.envCubemapTexture);
+    
+    // Generate mipmap levels for the environment cubemap:
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.envCubemapTexture);
+    this.gl.generateMipmap(this.gl.TEXTURE_CUBE_MAP);
+    this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, null);
   }
 
   /**
@@ -172,8 +184,40 @@ export class HDRCubeMap {
       var roughness = mipLevel / (this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS - 1.0);
 
       this.prefilterEnvCubemapShader.setFloat("roughness", roughness);
+      this.prefilterEnvCubemapShader.setFloat("resolution", mipLevelFaceWidth);
       this.createCubemap(this.prefilterEnvCubemapShader, mipLevelFaceWidth, this.prefilteredEnvCubemapTexture, mipLevel);
     }
+  }
+
+
+  createBrdfLUTTexture() {
+    this.brdfLUTTexture = this.gl.createTexture();
+    this.gl.bindTexture(this.gl.TEXTURE_2D, this.brdfLUTTexture);
+
+    this.gl.texStorage2D(this.gl.TEXTURE_2D, 1, this.gl.RG16F, this.BRDF_LUT_TEXTURE_WIDTH, this.BRDF_LUT_TEXTURE_WIDTH);
+
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+    this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR);
+
+    this.setupCubemapCaptureFramebuffer(this.BRDF_LUT_TEXTURE_WIDTH);
+    
+    const viewportParameters = this.gl.getParameter(this.gl.VIEWPORT);
+    const oldWidth = viewportParameters[2];
+    const oldHeight = viewportParameters[3];
+
+    this.gl.viewport(0, 0, this.BRDF_LUT_TEXTURE_WIDTH, this.BRDF_LUT_TEXTURE_WIDTH);
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.cubemapCaptureFramebuffer);
+
+    this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.brdfLUTTexture, 0);
+
+    this.brdfIntegrationMapShader.use();
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+    this.screenQuad.draw();
+
+    this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+    this.gl.viewport(0, 0, oldWidth, oldHeight);
   }
 
 
@@ -292,8 +336,24 @@ export class HDRCubeMap {
    * 
    * @returns {WebGLTexture} 
    */
-  getIrradianceMapTexture () {
+  getIrradianceCubemapTexture () {
     return this.irradianceCubemapTexture;
+  }
+
+  /**
+   * 
+   * @returns {WebGLTexture} 
+   */
+  getPrefilteredEnvCubemapTexture() {
+    return this.prefilteredEnvCubemapTexture
+  }
+
+  /**
+   * 
+   * @returns {WebGLTexture} 
+   */
+  getBrdfLutTexture() {
+    return this.brdfLUTTexture;
   }
 
 }

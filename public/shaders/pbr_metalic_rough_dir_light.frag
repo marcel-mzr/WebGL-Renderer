@@ -2,7 +2,8 @@
 precision highp float;
 
 // Constants
-#define PI 3.14159265
+const float PI = 3.14159265359;
+const float MAX_REFLECTION_LOD = 4.0;
 
 in vec3 normal;
 in vec4 tangent;
@@ -25,6 +26,8 @@ uniform sampler2D roughness_map;
 uniform sampler2D ao_map;
 uniform sampler2D shadow_map;
 uniform samplerCube irradiance_map;
+uniform samplerCube prefiltered_env_map;
+uniform sampler2D brdf_lut_map;
 
 uniform bool has_albedo_map;
 uniform bool has_normal_map;
@@ -80,10 +83,19 @@ void main() {
 
   vec3 ambient;
   if (should_do_ibl) {
+    vec3 R = reflect(-V, N);
+    vec3 prefiltered_color = textureLod(prefiltered_env_map, R, roughness * MAX_REFLECTION_LOD).rgb;
+
     vec3 ambient_k_s = fresnelSchlickRoughness(N, V, F0, roughness);
-    vec3 ambient_k_d = 1.0 - ambient_k_s;
+    vec2 env_brdf = texture(brdf_lut_map, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specular = prefiltered_color * (ambient_k_s * env_brdf.x + env_brdf.y);
+
+    vec3 ambient_k_d = (1.0 - ambient_k_s) * (1.0 - metalness);
     vec3 irradiance = texture(irradiance_map, N).rgb;
-    ambient = ambient_k_d * irradiance * albedo * ao_factor;
+
+    vec3 diffuse = irradiance * albedo;
+
+    ambient = (ambient_k_d * diffuse + specular) * ao_factor;
   } else {
     ambient = vec3(0.03) * albedo * ao_factor;
   }
