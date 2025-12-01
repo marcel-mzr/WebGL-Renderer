@@ -290,11 +290,14 @@ export class Mesh {
 
     // Enable aoMap texture
     if (this.aoMapTexture && this.renderingOptionsRef.shouldDoAo) {
+      // console.log("doing ao");
       this.gl.activeTexture(this.gl.TEXTURE4);
       shader.setInt("ao_map", 4);
       this.gl.bindTexture(this.gl.TEXTURE_2D, this.aoMapTexture);
       shader.setBool("has_ao_map", true);
     } else {
+      // console.log("not doing ao");
+
       shader.setBool("has_ao_map", false);
     }
   }

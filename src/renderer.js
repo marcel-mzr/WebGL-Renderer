@@ -26,7 +26,7 @@ export class Renderer {
 
     this.model = new Model(this.gl, "assets/models/lion_head_4k/lion_head_4k.gltf", this.renderingOptions);
 
-    this.hdrCubeMap = new HDRCubeMap(this.gl, "assets/hdris/mirrored_hall_4k.hdr");
+    this.hdrCubeMap = new HDRCubeMap(this.gl, "assets/hdris/kloppenheim_06_puresky_4k.hdr");
 
     this.envColor = vec3.create();
     this.exposure = 1.0;

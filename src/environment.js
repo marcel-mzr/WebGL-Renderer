@@ -15,7 +15,7 @@ export class HDRCubeMap {
     this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
     this.IRRADIANCE_CUBEMAP_WIDTH = 32;
     this.PREFILTERED_CUBEMAP_WIDTH = 512;
-    this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 5;
+    this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 9;
     this.BRDF_LUT_TEXTURE_WIDTH = 512;
 
     this.gl = gl;
@@ -176,6 +176,8 @@ export class HDRCubeMap {
     this.gl.activeTexture(this.gl.TEXTURE0);
     this.gl.bindTexture(this.gl.TEXTURE_CUBE_MAP, this.envCubemapTexture);
 
+    this.prefilterEnvCubemapShader.setFloat("resolution", this.ENV_CUBEMAP_WIDTH);
+
     for (var mipLevel = 0; mipLevel < this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS; ++mipLevel) {
       var mipLevelFaceWidth = this.PREFILTERED_CUBEMAP_WIDTH * Math.pow(0.5, mipLevel);
 
@@ -184,7 +186,6 @@ export class HDRCubeMap {
       var roughness = mipLevel / (this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS - 1.0);
 
       this.prefilterEnvCubemapShader.setFloat("roughness", roughness);
-      this.prefilterEnvCubemapShader.setFloat("resolution", mipLevelFaceWidth);
       this.createCubemap(this.prefilterEnvCubemapShader, mipLevelFaceWidth, this.prefilteredEnvCubemapTexture, mipLevel);
     }
   }
