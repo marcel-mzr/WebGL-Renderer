@@ -3,7 +3,7 @@ precision highp float;
 
 // Constants
 const float PI = 3.14159265359;
-const float MAX_REFLECTION_LOD = 4.0;
+const float MAX_REFLECTION_LOD = 9.0;
 
 in vec3 normal;
 in vec4 tangent;
