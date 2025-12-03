@@ -4,11 +4,318 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WebGl Renderer</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="src/main.js" type="module"></script>
+  <script src="src/info_section_controls.js" type="module"></script>
 
 </head>
 <body>
+  
+  <!-- 1. The Information Overlay Page -->
+  <div id="info-overlay">
+    <div class="info-container">
+      <div class="info-header">
+        <h2>Renderer Manual</h2>
+        <button id="btn-close-info" class="icon-btn" aria-label="Close">
+          &times;
+        </button>
+      </div>
+      
+      <div class="info-content">
+        
+        <!-- Model Section -->
+        <section class="info-section">
+          <h2>Model</h2>
+          
+          <div class="info-block">
+            <h3>Included Model Selector</h3>
+            <p>The selector button at the top of the Model section is used to select included Models.</p>
+          </div>
+
+          <div class="info-block">
+            <h3>Load Model File Button</h3>
+            <p>
+              The Load Model File button can be used to load local model files.
+              At this moment only <code>.glb</code> model files are supported.
+            </p>
+            <p>
+              To find free (CC licensed) <code>.glb</code> model files, one can use websites like
+              <a href="https://sketchfab.com/" target="_blank" class="link-btn">Sketchfab</a>.
+            </p>
+            <div class="note-box">
+              <strong>Note:</strong> 
+              At this point, the renderer only supports physically based Models. 
+              Importing models that don't have the necessary Textures (Albedo, Metallness, Roughness, Ambient Occlusion) configured,
+             may lead to unwanted visual behavior.
+            </div>
+          </div>
+
+          <div class="info-block">
+            <h3>Model Scale Slider</h3>
+            <p>
+              The Model Scale slider is used to scale the model independent of the camera distance,
+              which can be controlled through the mouse scroll wheel.
+            </p>
+            <p>It can mainly be used to adjust visibility on mobile devices.</p>
+          </div>
+          
+        </section>
+
+        <!-- Environment Section -->
+        <section class="info-section">
+          <h2>Environment</h2>
+
+          <div class="info-block">
+            <h3>Environment Maps</h3>
+            <p>
+              The environment map selector at the top of this section is used to select preconfigured HDR environment maps
+              that are projected to a cube around the viewer. If environment maps are not wanted, one can toggle them and
+              select a background color instead.
+            </p>
+            <p>Environment maps can be used to do image based lighting (IBL).</p>
+          </div>
+          <div class="info-block">
+            <h3>Sun</h3>
+            <p>The sun in this renderer is a direct light source that can be used for lighting on top of lighting from the environment.</p>
+            <p>To change the intensity of the sun, you can use the intensity slider. Additionally, the sun is used to be a source for potential shadows.</p>
+          </div>
+        </section>
+
+        <!-- Renderer Section -->
+        <section class="info-section">
+          <h2>Renderer</h2>
+          
+          <div class="info-block">
+            <h3>Ambient Occlusion</h3>
+            <p>The ambient occlusion toggle toggles texture based ambient occlusion.</p>
+            <p>
+              When using texture based ambient occlusion, the renderer uses a ambient occlusion texture stored in the model data that
+              specifies how much light can reach a specific part of the model. Using this occlusion value the renderer weights the light
+              intensity such that occluded areas appear darker.
+            </p>
+            
+            <div class="img-comparision-widget">
+              <h4>Ambient Occlusion Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_ao_on.png" alt="AO On">
+                  <span class="comp-label on">AO ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_ao_off.png" alt="AO Off">
+                  <span class="comp-label off">AO OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+
+            <div class="note-box">
+              <strong>Note:</strong> 
+              In some cases, model files are not configured correctly, which leads to the model importer not recognising AO Textures.
+            </div>
+          </div>
+
+          <div class="info-block">
+            <h3>Normal Mapping</h3>
+            <p>
+              Normal mapping is a technique that alters the surface normal on a texture basis, altering light Interaction
+              properties even on gemetrically flat sufaces.
+            </p>
+            <p>
+              Using normal mapping can create details in models without changing the complexity of the mesh's geometry thereby
+              saving performance.
+            </p>
+
+            <div class="img-comparision-widget">
+              <h4>Normal Mapping Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_normal_mapping_on.png" alt="Normal Mapping On">
+                  <span class="comp-label on">Normal Mapping ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_normal_mapping_off.png" alt="Normal Mapping Off">
+                  <span class="comp-label off">Normal Mapping OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-block">
+            <h3>Image Based Lighting</h3>
+            <p>
+              Image based lighting is a rendering technique that uses the color information of a hdr image to calculate
+              the light interaction on the models surface.
+            </p>
+            <p>
+              A equirectangular Image of the scene is loaded and projected to a cube around the scene which is then called the environment map.
+              This cubemap texture then gets convoluted, capturing diffuse interaction into a irradiance map.
+              For specular interaction with the model, the environment map gets prefiltered for different roughness values thereby supporting
+              different degrees of clarity in reflections.
+              Both of these maps are then used to calulate the ambient contribution from the environment making materials feel more realistic. 
+            </p>
+
+            <div class="img-comparision-widget">
+              <h4>IBL Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_ibl_on.png" alt="IBL On">
+                  <span class="comp-label on">IBL ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_ibl_off.png" alt="IBL Off">
+                  <span class="comp-label off">IBL OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block">
+            <h3>Shadows</h3>
+            <p>
+              Shadows produced through a technique called shadow mapping.
+              A orthographic projection of the model from the sun's view is rendererd into a depth map texture.
+              When calculating lighting, this texture is then read out and used to compare the depth of the texture
+              with the actual depth of the fragment (pixel you can see).
+              The renderer thereby determines if the fragment is farther away than the depth value stored in the texture, thus
+              concluding that it is in shadow.
+            </p>
+            
+            <div class="img-comparision-widget">
+              <h4>Shadow Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_shadows_on.png" alt="Shadows On">
+                  <span class="comp-label on">Shadows ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_shadows_off.png" alt="Shadows Off">
+                  <span class="comp-label off">Shadows OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+            
+            <div class="note-box">
+              <strong>Note:</strong> 
+              The rendering mode selector can be used to view the current depth map.
+            </div>
+            <div class="note-box">
+              <strong>Note:</strong> 
+              By using this technique you get a shadow that is rather cheap to calculate.
+              The shadow quality on the other hand is dependent on the texture quality of the depth map, which is why
+              the shadow looks pixalated.
+              Also, this implementation of shadow mapping does not support soft shadows.
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Post Processing Section -->
+        <section class="info-section">
+          <h2>Post Processing</h2>
+          <p>
+            Post processing is the last step of the rendering pipeline.
+            When an frame is rendered it is stored in a texture and then altered by the post processing stage.
+          </p>
+          <div class="info-block">
+            <h3>Exposure</h3>
+            <p>
+              The exposure value determines how bright an image should be.
+              In photography this value roughly reflects how much light is captured by the cameras sensor.
+            </p>
+            <p>
+              Since some HDR environment maps have differenty high color values, the exposure gives you control of what
+              the scene should look like.
+            </p>
+            
+            <div class="media-container">
+             <h4>Exposure Change Demo</h4>
+             <video controls class="info-video">
+               <source src="assets/info_page_media/exposure_demonstration.mp4" type="video/mp4">
+               Your browser does not support the video tag.
+             </video>
+            </div>
+          </div>
+          
+          <div class="info-block">
+            <h3>Tone Mapping</h3>
+            <p>
+              Since HDR images are used for more realistic rendering, color values exceed values that can be
+              displayed on a monitor.
+              Tone mapping is used to convert the HDR values down to LDR without losing too much detail.
+            </p>
+            <p>
+              Not using tonemapping result in color values that get clamped and therefore detail in brighter colors is lost.
+            </p>
+
+            <div class="img-comparision-widget">
+              <h4>Tonemapping Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_tonemapping_on.png" alt="Tonemapping On">
+                  <span class="comp-label on">Tonemapping ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_tonemapping_off.png" alt="Tonemapping Off">
+                  <span class="comp-label off">Tonemapping OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-block">
+            <h3>Gamma Correction</h3>
+            <p>
+              The Weber Fechner law states that the percived intensity of a sensation is logarithmically proportional to the
+              physical intensity. Therefore, displaying colors lineary would result in darker colors being more pronounced than lighter ones.
+              Since light calculation is done in linear color space, gamma correction adjusts the color such that humans percieve it linearly.
+            </p>
+
+            <div class="img-comparision-widget">
+              <h4>Gamma Correction Comparison</h4>
+              <div class="img-comp-container">
+                <div class="img-comp-img img-comp-overlay">
+                  <!-- Image on the left -->
+                  <img src="assets/info_page_media/compare_gamma_correction_on.png" alt="Gamma Correction On">
+                  <span class="comp-label on">Gamma Correction ON</span>
+                </div>
+                <div class="img-comp-img">
+                  <!-- Image on the right -->
+                  <img src="assets/info_page_media/compare_gamma_correction_off.png" alt="Gamma Correction Off">
+                  <span class="comp-label off">Gamma Correction OFF</span>
+                </div>
+                <input type="range" min="0" max="100" value="50" class="img-comp-slider">
+                <div class="slider-handle"></div>
+              </div>
+            </div>
+            
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
   <div id="app-container">
     
     <div id="canvas-wrapper">
@@ -19,6 +326,14 @@
     <div id="ui-sidebar">
       <div class="ui-content">
         
+        <!-- Added Info Button at the top of controls -->
+        <div class="control-group">
+           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+             <h3 style="margin:0; border:none;">Settings</h3>
+             <button id="btn-open-info" class="small-btn">About / Info</button>
+           </div>
+        </div>
+
         <div class="control-group">
           <h3>Model</h3>
           <select id="model-select" style="margin-bottom: 10px;">

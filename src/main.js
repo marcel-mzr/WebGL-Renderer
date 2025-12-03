@@ -1,7 +1,7 @@
-import { Camera } from "./camera";
-import { InputHandler } from "./input";
-import { Renderer } from "./renderer";
-import { RendererController } from "./renderer-controller";
+import { Camera } from "./rendering/camera.js";
+import { InputHandler } from "./rendering/input.js";
+import { Renderer } from "./rendering/renderer.js";
+import { RendererController } from "./rendering/renderer-controller.js";
 
 main();
 

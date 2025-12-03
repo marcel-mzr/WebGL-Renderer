@@ -113,21 +113,16 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 .primary-btn:hover { background-color: #3587e0; }
 
 /* --- 4. Loading Spinner --- */
-
 #loading-spinner {
-  /* Positioning in the middle of canvas-wrapper */
   position: absolute;
   top: 50%; 
   left: 50%;
-  /* Visuals */
   width: 50px;
   height: 50px;
-  border: 5px solid rgba(255, 255, 255, 0.1); /* Faint background ring */
-  border-top: 5px solid #4a9eff; /* Accent color matching your theme */
-  border-radius: 50%; /* Makes it circular */
-  z-index: 20; /* Ensure it sits above the canvas */
-  
-  /* Animation */
+  border: 5px solid rgba(255, 255, 255, 0.1);
+  border-top: 5px solid #4a9eff;
+  border-radius: 50%;
+  z-index: 20;
   animation: spin 1s linear infinite;
 }
 
@@ -137,16 +132,263 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* Utility class to hide the spinner */
-.hidden {
-  display: none !important;
+.hidden { display: none !important; }
+.disabled-row { opacity: 0.4; pointer-events: none; filter: grayscale(100%); }
+
+/* --- 6. Information Overlay Page --- */
+
+#info-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* --- 5. State Utility Classes --- */
-
-/* Reduces opacity for disabled rows to indicate they are inactive */
-.disabled-row {
-  opacity: 0.4;
-  pointer-events: none; /* Prevents clicking on the label or input */
-  filter: grayscale(100%); /* Optional: makes it look strictly disabled */
+#info-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
 }
+
+.info-container {
+  background-color: #1e1e1e;
+  width: 90%;
+  max-width: 900px;
+  max-height: 90vh;
+  border-radius: 12px;
+  border: 1px solid #333;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+#info-overlay.active .info-container { transform: translateY(0); }
+
+.info-header {
+  padding: 20px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #252525;
+}
+
+.info-header h2 { margin: 0; font-size: 1.2rem; color: #fff; }
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 5px;
+}
+.icon-btn:hover { color: #fff; }
+
+.info-content {
+  padding: 30px;
+  overflow-y: auto;
+  color: #ccc;
+  line-height: 1.6;
+}
+
+/* --- 8. Info Page Content Typography & Layout --- */
+
+.info-section { margin-bottom: 40px; }
+.info-section h2 {
+  color: #4a9eff;
+  border-bottom: 1px solid #444;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.info-block { margin-bottom: 25px; }
+.info-block h3 {
+  color: #e0e0e0;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  border-bottom: none; /* Override sidebar style */
+  padding-bottom: 0;
+  text-transform: none; /* Override sidebar style */
+  letter-spacing: normal;
+}
+.info-block p { margin-top: 0; margin-bottom: 15px; color: #aaa; }
+
+.note-box {
+  background: rgba(74, 158, 255, 0.1);
+  border-left: 4px solid #4a9eff;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 4px;
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+/* Media Containers */
+.media-container {
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+.media-container h4 { margin: 0 0 10px 0; color: #888; font-size: 0.9rem; text-transform: uppercase; }
+
+.info-video {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #000;
+  display: block;
+}
+
+/* --- 9. Image Comparison Slider Styles --- */
+
+.img-comparision-widget {
+  margin: 30px 0;
+  padding: 20px;
+  background: #252525;
+  border-radius: 8px;
+}
+.img-comparision-widget h4 { margin-top: 0; color: #fff; margin-bottom: 15px; }
+
+.img-comp-container {
+  position: relative;
+  height: 300px; /* Fixed height for demo */
+  width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid #444;
+}
+
+.img-comp-img {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.img-comp-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Ensures images fill space nicely */
+}
+
+
+/* Labels on images */
+.comp-label {
+  position: absolute;
+  top: 10px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+.comp-label.on { left: 10px; }
+.comp-label.off { right: 10px; }
+
+.img-comp-overlay {
+  z-index: 1; /* Forces this image to sit on top of the 'OFF' image */
+}
+
+/* The slider input (invisible but interactable) */
+.img-comp-slider {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+  z-index: 10;
+  top: 0;
+  left: 0;
+}
+
+/* The visual divider line */
+.slider-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%; /* JS will update this */
+  width: 2px;
+  background: #fff;
+  z-index: 5;
+  pointer-events: none; /* Let clicks pass to input */
+  box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* The circle on the handle */
+.slider-handle::after {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+
+  content: '\e86f';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  background: #4a9eff;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* Mobile Tweaks */
+@media (max-width: 768px) {
+  .info-container {
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    border: none;
+  }
+  .info-content { padding: 20px; }
+  .img-comp-container { height: 200px; } /* Smaller comparison on mobile */
+}
+
+.small-btn {
+  background: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.small-btn:hover {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: white;
+}
+.link-btn {
+  color: #4a9eff;
+  text-decoration: none;
+}
+.link-btn:hover { text-decoration: underline; }
