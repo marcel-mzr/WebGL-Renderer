@@ -1,8 +1,15 @@
+
+/**
+ * Represents a simple framebuffer with 16 bit color precision,
+ * 24 bit depth map and 8 bit stencil buffer
+ */
 export class Framebuffer {
 
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
+   * Creates and setups the frambuffer
+   * @param {WebGL2RenderingContext} gl - The webgl context
+   * @param {number} width - The width of the framebuffer
+   * @param {number} height - The height of the framebuffer
    */
   constructor(gl, width, height) {
     this.gl = gl;
@@ -27,6 +34,9 @@ export class Framebuffer {
     this.setup();
   }
 
+  /**
+   * Creates and bind the framebuffer to its texture attachment
+   */
   setup() {
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
     // Setup color buffer
@@ -51,9 +61,9 @@ export class Framebuffer {
   }
 
   /**
-   * 
-   * @param {number} width 
-   * @param {number} height 
+   * Resizes the frambuffer to the given width and height
+   * @param {number} width - The new width
+   * @param {number} height - The new height
    */
   resize(width, height) {
     this.gl.deleteTexture(this.colorBufferTexture);
@@ -63,29 +73,41 @@ export class Framebuffer {
     this.setup();
   }
 
+  /**
+   * Enables the framebuffer such that a shader can draw to it
+   */
   enable() {
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
     this.gl.enable(this.gl.DEPTH_TEST);
   }
 
+  /**
+   * Disables the framebuffer
+   */
   disable() {
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
     this.gl.disable(this.gl.DEPTH_TEST);
   }
 
+  /**
+   * @returns {WebGLTexture} The color texture that a shader may have written to
+   */
   getColorBufferTexture() {
     return this.colorBufferTexture;
   }
 
 }
 
+/**
+ * A Frambuffer that has a depth texture
+ */
 export class DepthMapFramebuffer {
   
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
-   * @param {number} width 
-   * @param {number} height 
+   * Creates and setups the framebuffer
+   * @param {WebGL2RenderingContext} gl - The webgl context
+   * @param {number} width - The width of the framebuffer
+   * @param {number} height - The height of the framebuffer
    */
   constructor(gl, width, height) {
     this.gl = gl;
@@ -99,6 +121,9 @@ export class DepthMapFramebuffer {
     this.setup();
   }
 
+  /**
+   * Setups the framebuffer with the depth texture attachment
+   */
   setup() {
     this.depthMap = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthMap);
@@ -116,19 +141,27 @@ export class DepthMapFramebuffer {
     this.gl.readBuffer(this.gl.NONE);
   }
 
+  /**
+   * Enables the framebuffer such that a shader can draw to it
+   */
   enable() {
     this.gl.viewport(0, 0, this.width, this.height);
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
     this.gl.clear(this.gl.DEPTH_BUFFER_BIT);
   }
 
+  /**
+   * Disables the framebuffer
+   */
   disable(width, height) {
     this.gl.viewport(0, 0, width, height);
     this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
   }
 
+  /**
+   * @returns {WebGLTexture} The depth map that a shader may have written to
+   */
   getDepthMapTexture() {
     return this.depthMap;
   }
-
 }

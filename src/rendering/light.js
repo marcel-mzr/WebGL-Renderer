@@ -6,6 +6,7 @@ import { mat4, vec3 } from "gl-matrix";
 export class DirectionalLight {
   
   /**
+   * Creates a directional light.
    * @param {vec3} direction - The direction the light is pointing to
    * @param {vec3} color - The color of the light
    * @param {number} intensity - The intensity of the light
@@ -34,7 +35,7 @@ export class DirectionalLight {
 
 
   /**
-   * 
+   * Sets the new direction of the light
    * @param {vec3} direction 
    */
   setDirection(direction) {
@@ -42,7 +43,7 @@ export class DirectionalLight {
   }
 
   /**
-   * 
+   * sets the new intensity of the light
    * @param {number} intensity 
    */
   setIntensity(intensity) {

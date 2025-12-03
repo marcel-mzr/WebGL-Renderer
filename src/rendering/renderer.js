@@ -11,12 +11,15 @@ import { NDCQuad } from "./post-processing-quad";
 export const RENDERING_MODE_STANDARD = 0;
 export const RENDERING_MODE_DEPTH_SUN = 1;
 
+/**
+ * The class that holds the components to render and renders the scene
+ */
 export class Renderer {
 
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
-   * @param {Camera} camera - the camera to render the scene from
+   * Constructs the Renderer and creates its components
+   * @param {WebGL2RenderingContext} gl - The webgl context
+   * @param {Camera} camera - the camera to render the scene from in the standard rendering mode
    */
   constructor(gl, camera) {
     this.gl = gl;
@@ -50,7 +53,7 @@ export class Renderer {
     this.depthMapShader = new Shader(this.gl, "shaders/depth_map.vert", "shaders/depth_map.frag");
     this.depthMapToScreenQuadShader = new Shader(this.gl, "shaders/depth_map_to_screen_quad.vert", "shaders/depth_map_to_screen_quad.frag");
 
-    /** Variable to signal the stop of the render loop*/
+    // Variable to signal the stop of the render loop
     this.shouldRender = true;
   }
 
@@ -115,6 +118,9 @@ export class Renderer {
     this.screenQuad.draw();
   }
 
+  /**
+   * Renders the forward pass with all lighting calculation into the forwardPassFramebuffer
+   */
   renderForwardPass() {
     const V = this.camera.getViewMatrix();
     const P = this.camera.getProjectionMatrix();
@@ -180,6 +186,9 @@ export class Renderer {
     this.forwardPassFramebuffer.disable();
   }
 
+  /**
+   * Uses the forwardPassFramebuffer to renderer post processing effects to the screen
+   */
   renderPostProcessing() {
     this.postProcessingShader.use();
     this.gl.activeTexture(this.gl.TEXTURE0);
@@ -241,7 +250,8 @@ export class Renderer {
   }
 
   /**
-   * @param {number} modelScale 
+   * Updates the light space matrix to match the new model scale
+   * @param {number} modelScale - The new model scale
    */
   updateLightSpaceMatrix(modelScale) {
     const halfSize = 2 * modelScale;
@@ -285,22 +295,23 @@ export class Renderer {
   }
 
   /**
-   *
-   * @param {vec3} color 
+   * @param {vec3} color - The new environement color
    */
   setEnvColor(color) {
     this.envColor = color;
   }
 
   /**
-   * 
-   * @param {number} value 
+   * @param {number} value - The new exposure value
    */
   setExposure(value) {
     this.exposure = value;
   }
 }
 
+/**
+ * Datastructure that holds different rendering options
+ */
 export class RenderingOptions {
   constructor() {
     this.shouldRenderEnvironmentMap = true;

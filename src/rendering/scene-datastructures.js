@@ -5,12 +5,15 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { toMat4, toVec3 } from "./utils";
 import { RenderingOptions } from "./renderer";
 
+/**
+ * The model holding textures and meshes to be rendered
+ */
 export class Model {
 
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl
-   * @param {string} modelPath
+   * Contructs a new unitialized model.
+   * @param {WebGL2RenderingContext} gl - The webgl context
+   * @param {string} modelPath - The path to the .glb or .gltf model file
    * @param {RenderingOptions} renderingOptionsRef - A reference to the renderers rendering options
    */
   constructor(gl, modelPath, renderingOptionsRef) {
@@ -28,6 +31,9 @@ export class Model {
     this.textures = new Map();
   }
 
+  /**
+   * Loades the textures and meshes of the model
+   */
   async load() {
     var loader = new GLTFLoader();
     
@@ -126,8 +132,8 @@ export class Model {
   }
 
   /**
-   * 
-   * @param {Shader} shader 
+   * Draws the model with the used shader
+   * @param {Shader} shader - The shader that is currently used
    */
   draw(shader) {
     if (this.meshes.length === 0) return;
@@ -140,7 +146,7 @@ export class Model {
 
   /**
    * Sets the scale of the model to the scale factor
-   * @param {number} scaleFactor
+   * @param {number} scaleFactor - The new scale factor
    */
   scale(scaleFactor) {
     this.meshes.forEach(mesh => {
@@ -150,10 +156,13 @@ export class Model {
 }
 
 
+/**
+ * A triangle mesh of a Model
+ */
 export class Mesh {
 
   /**
-   * 
+   * Contructs a Mesh object
    * @param {WebGL2RenderingContext} gl
    * @param {Model} model The underlying model
    * @param {THREE.Mesh} threeMesh

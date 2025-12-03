@@ -1,11 +1,15 @@
 import { Renderer, RENDERING_MODE_DEPTH_SUN, RENDERING_MODE_STANDARD } from "./renderer";
-import { Model } from "./scene-datastructures";
 import { hexToRGBVec } from "./utils";
 
+/**
+ * Acts as a interface between the controll block in the website and the Renderer.
+ */
 export class RendererController {
 
   /**
-   * @param {Renderer} renderer 
+   * Creates and captures the html elements that are used to controll the renderer.
+   * Does not initialize the controller completely.
+   * @param {Renderer} renderer - The renderer the controller interfaces to
    */
   constructor(renderer) {
     this.renderer = renderer;
@@ -105,9 +109,6 @@ export class RendererController {
     }
   }
 
-  /**
-   * Callback that gets called when the canvas resizes
-   */
   onCanvasResize() {
     const displayWidth = this.webglCanvasWrapper.clientWidth;
     const displayHeight = this.webglCanvasWrapper.clientHeight;
@@ -248,7 +249,7 @@ export class RendererController {
     }
   }
 
-  onShadowsToggle() { // TODO: implement
+  onShadowsToggle() {
     if (this.shadowsToggle.checked) {
       this.renderer.renderingOptions.shouldRenderShadows = true;
     } else {

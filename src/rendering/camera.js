@@ -1,12 +1,13 @@
 import { vec3, mat4 } from "gl-matrix";
 import { InputHandler } from "./input.js";
 
+
 export class Camera {
 
   /**
-   * 
-   * @param {InputHandler} inputHandler 
-   * @param {number} aspectRatio 
+   * Constructs a Camera that is controlled by the supplied input handler.
+   * @param {InputHandler} inputHandler - Input handler that calls camera callbacks
+   * @param {number} aspectRatio - The aspect ratio of the screen
    */
   constructor(inputHandler, aspectRatio) {
     this.aspectRatio = aspectRatio;
@@ -154,10 +155,6 @@ export class Camera {
     this.inputHandler.subscribe("wheel", (event) => this.onWheel(event));
   }
 
-  /**
-   * 
-   * @returns {vec3} the position of the camera
-   */
   getPosition() {
     return this.cameraPosition;
   }
@@ -225,7 +222,6 @@ export class Camera {
    * @param {WheelEvent} event 
    */
   onWheel(event) {
-
     this.distance = this.distance + event.deltaY * this.wheelSpeed;
 
     this.distance = Math.min(this.maxDistance, this.distance);

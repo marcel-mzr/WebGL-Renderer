@@ -4,11 +4,14 @@ import * as THREE from 'three';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { NDCQuad } from "./post-processing-quad";
 
+/**
+ * A HDR Cube map containing all necessary textures for IBL
+ */
 export class HDRCubeMap {
 
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
+   * Constructs a uninitialized HDRCubeMap. To initialize it call the init method.
+   * @param {WebGL2RenderingContext} gl - The gl rendering context
    * @param {string} hdriPath - The path the the HDR Image
    */
   constructor(gl, hdriPath) {
@@ -68,6 +71,9 @@ export class HDRCubeMap {
     this.brdfIntegrationMapShader = new Shader(this.gl, "shaders/brdf_integration_map.vert", "shaders/brdf_integration_map.frag");
   }
 
+  /**
+   * Initializes the HDRCubemap, creating the needed textures for IBL.
+   */
   async init() {
     const hdrImage = await this.loadHDRIData(this.hdriPath);
     this.setupHDRITexture(hdrImage);
@@ -190,7 +196,9 @@ export class HDRCubeMap {
     }
   }
 
-
+  /**
+   * Integrates the Brdf and stores a way to lookup in the BrdfLUTTexture
+   */
   createBrdfLUTTexture() {
     this.brdfLUTTexture = this.gl.createTexture();
     this.gl.bindTexture(this.gl.TEXTURE_2D, this.brdfLUTTexture);
@@ -223,8 +231,8 @@ export class HDRCubeMap {
 
 
   /**
-   * Loads a HDR Image
-   * @param {string} path 
+   * Loads an HDR image
+   * @param {string} path - The path to the .hdr image
    * @returns {width: number, height: number, data: Float32Array}
    */
   async loadHDRIData(path) {
@@ -243,8 +251,8 @@ export class HDRCubeMap {
   }
 
   /**
-   * 
-   * @param {width: number, height: number, data: Float32Array} hdrImage 
+   * Setups the WebGL texture that stores the hdr image
+   * @param {width: number, height: number, data: Float32Array} hdrImage - HDR image size and data
    */
   setupHDRITexture(hdrImage) {
     this.hdriTexture = this.gl.createTexture();
@@ -259,7 +267,6 @@ export class HDRCubeMap {
 
     this.gl.bindTexture(this.gl.TEXTURE_2D, null);
     this.gl.pixelStorei(this.gl.UNPACK_FLIP_Y_WEBGL, false);
-
   }
 
   setupCubemapCaptureViewMatrices() {
@@ -279,7 +286,7 @@ export class HDRCubeMap {
   }
 
   /**
-   * 
+   * Sets the cubemap capture framebuffer to capture the given face width
    * @param {number} faceWidth - the width of one quadratic face 
    */
   setupCubemapCaptureFramebuffer(faceWidth) {
@@ -334,7 +341,6 @@ export class HDRCubeMap {
   }
 
   /**
-   * 
    * @returns {WebGLTexture} 
    */
   getIrradianceCubemapTexture () {
@@ -342,7 +348,6 @@ export class HDRCubeMap {
   }
 
   /**
-   * 
    * @returns {WebGLTexture} 
    */
   getPrefilteredEnvCubemapTexture() {
@@ -350,7 +355,6 @@ export class HDRCubeMap {
   }
 
   /**
-   * 
    * @returns {WebGLTexture} 
    */
   getBrdfLutTexture() {
@@ -359,11 +363,13 @@ export class HDRCubeMap {
 
 }
 
-
+/**
+ * Datastructure that can draw a skybox in the scene
+ */
 export class Skybox {
 
   /**
-   * @param {WebGL2RenderingContext} gl
+   * @param {WebGL2RenderingContext} gl - The rendering context
    * @param {string} path - path to the directory containing the cubemap textures
    */
   constructor(gl) {
@@ -416,7 +422,7 @@ export class Skybox {
 
   /**
    * Draws the skybox
-   * @param {Shader} skyboxShader
+   * @param {Shader} skyboxShader - The used and initialized skybox shader
    */
   draw(skyboxShader) {
     this.gl.activeTexture(this.gl.TEXTURE0);
@@ -436,10 +442,13 @@ export class Skybox {
 
 }
 
+/**
+ * Datastructure storing a unit cube used for environment maps
+ */
 class EnvironmentMapCube {
 
   /**
-   * 
+   * Creates and setups the environment map cube 
    * @param {WebGL2RenderingContext} gl 
    */
   constructor(gl) {
@@ -457,6 +466,9 @@ class EnvironmentMapCube {
     this.setup();
   }
 
+  /**
+   * Setups the Vertex Array needed for drawing the cube
+   */
   setup() {
     this.vao = this.gl.createVertexArray();
     const vbo = this.gl.createBuffer();
@@ -472,6 +484,9 @@ class EnvironmentMapCube {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
   }
 
+  /**
+   * Draws the environement cube with the current used shader
+   */
   draw() {
     this.gl.depthFunc(this.gl.LEQUAL);
     this.gl.disable(this.gl.CULL_FACE)

@@ -5,8 +5,8 @@
 export class NDCQuad {
 
   /**
-   * 
-   * @param {WebGL2RenderingContext} gl 
+   * Creates and initializes the NDC Quad
+   * @param {WebGL2RenderingContext} gl - The webgl context
    */
   constructor(gl) {
     this.FLOAT_SIZE = 4;
@@ -42,6 +42,9 @@ export class NDCQuad {
     this.gl.bindVertexArray(null);
   }
 
+  /**
+   * Draws the NCD quad to the currenty used shader
+   */
   draw() {
     this.gl.bindVertexArray(this.vao);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);

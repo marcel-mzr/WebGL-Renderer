@@ -1,8 +1,12 @@
+
+/**
+ * A input handler class that notifies its subscribers about input events on the canvas
+ */
 export class InputHandler {
 
   /**
    * Initializes the InputHandler and registers all supported event listeners
-   * @param {HTMLCanvasElement} canvas 
+   * @param {HTMLCanvasElement} canvas - The canvas the input handler is attached to
    */
   constructor(canvas) {
     this.canvas = canvas;
@@ -44,6 +48,9 @@ export class InputHandler {
     }
   }
 
+  /**
+   * Registers the supported event listeners
+   */
   registerEventListeners() {
     this.canvas.addEventListener("pointerup", (event) => {
       for (let callback of this.pointerupCallbacks) {
