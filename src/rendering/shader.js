@@ -1,3 +1,7 @@
+
+/**
+ * A WebGL Shader consisting of a vertex and fragment shader
+ */
 export class Shader {
 
   /**
@@ -45,6 +49,9 @@ export class Shader {
     this.program = program;
   }
 
+  /**
+   * Enables the shader
+   */
   use() {
     this.gl.useProgram(this.program);
   }

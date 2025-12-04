@@ -3,9 +3,12 @@ import { InputHandler } from "./rendering/input.js";
 import { Renderer } from "./rendering/renderer.js";
 import { RendererController } from "./rendering/renderer-controller.js";
 
-main();
+rendererMain();
 
-async function main() {
+/**
+ * The main function that starts the renderer
+ */
+async function rendererMain() {
   const canvas = document.querySelector("#webgl-canvas");
   /** @type {WebGL2RenderingContext} */
   const gl = canvas.getContext("webgl2");

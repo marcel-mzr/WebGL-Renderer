@@ -233,7 +233,7 @@ export class Mesh {
   }
 
   /**
-   * 
+   * Draws the mesh using the currently used shader supplied to the method
    * @param {Shader} shader - Active shader (use called beforehand)
    */
   draw(shader) {
@@ -370,7 +370,6 @@ export class Mesh {
   }
 
   /**
-   * 
    * @returns {mat4} The model transform of the mesh
    */
   getModelMatrix() {
@@ -385,7 +384,6 @@ export class Mesh {
  */
 function extractVertices(threeMesh) {
   const VERTEX_FLOAT_COUNT = 12;
-
 
   if (!(threeMesh.geometry instanceof THREE.BufferGeometry)) {
     throw new Error("Can only process meshes with BufferGeometry type")
