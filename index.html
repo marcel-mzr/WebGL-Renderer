@@ -286,9 +286,17 @@
           <div class="info-block">
             <h3>Gamma Correction</h3>
             <p>
-              The Weber Fechner law states that the percived intensity of a sensation is logarithmically proportional to the
-              physical intensity. Therefore, displaying colors lineary would result in darker colors being more pronounced than lighter ones.
-              Since light calculation is done in linear color space, gamma correction adjusts the color such that humans percieve it linearly.
+              Images are often times stored in SRGB space. This is a color space where colors are not linearly stored and rather adjusted by
+              a gamma value. This is done because smaller (darker) floating point numbers are not very precise near zero.
+              If an image would get stored linearly, darker colors would get rounded to the next best number resulting in a visual banding effect.
+            </p>
+            <p>
+              In reality, monitors are calibrated to respond to a gamma curve. So when outputing a color on the monitor it takes the SRGB image
+              and outputs a linear signal. Therefore the banding effect does not happen.
+            </p>
+            <p>
+              Gamma correction is now exactly the process of converting linear color space lighting calculations into for example SRGB space
+              such that a monitor recorrects it to be output linearly.
             </p>
 
             <div class="img-comparision-widget">
