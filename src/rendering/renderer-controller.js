@@ -19,7 +19,7 @@ export class RendererController {
 
     // Canvas
     this.webglCanvas = document.getElementById("webgl-canvas");
-    this.webglCanvasWrapper = document.getElementById("canvas-wrapper");
+    this.webglCanvasWrapper = document.getElementById("rendering-canvas-wrapper");
     this.loadingSpinner = document.getElementById("loading-spinner");
 
     // Model Controls

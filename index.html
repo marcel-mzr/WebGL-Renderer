@@ -101,12 +101,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_ao_on.png" alt="AO On">
-                  <span class="comp-label on">AO ON</span>
+                  <span class="img-comp-label on">AO ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_ao_off.png" alt="AO Off">
-                  <span class="comp-label off">AO OFF</span>
+                  <span class="img-comp-label off">AO OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -136,12 +136,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_normal_mapping_on.png" alt="Normal Mapping On">
-                  <span class="comp-label on">Normal Mapping ON</span>
+                  <span class="img-comp-label on">Normal Mapping ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_normal_mapping_off.png" alt="Normal Mapping Off">
-                  <span class="comp-label off">Normal Mapping OFF</span>
+                  <span class="img-comp-label off">Normal Mapping OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -169,12 +169,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_ibl_on.png" alt="IBL On">
-                  <span class="comp-label on">IBL ON</span>
+                  <span class="img-comp-label on">IBL ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_ibl_off.png" alt="IBL Off">
-                  <span class="comp-label off">IBL OFF</span>
+                  <span class="img-comp-label off">IBL OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -199,12 +199,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_shadows_on.png" alt="Shadows On">
-                  <span class="comp-label on">Shadows ON</span>
+                  <span class="img-comp-label on">Shadows ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_shadows_off.png" alt="Shadows Off">
-                  <span class="comp-label off">Shadows OFF</span>
+                  <span class="img-comp-label off">Shadows OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -270,12 +270,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_tonemapping_on.png" alt="Tonemapping On">
-                  <span class="comp-label on">Tonemapping ON</span>
+                  <span class="img-comp-label on">Tonemapping ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_tonemapping_off.png" alt="Tonemapping Off">
-                  <span class="comp-label off">Tonemapping OFF</span>
+                  <span class="img-comp-label off">Tonemapping OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -297,12 +297,12 @@
                 <div class="img-comp-img img-comp-overlay">
                   <!-- Image on the left -->
                   <img src="assets/info_page_media/compare_gamma_correction_on.png" alt="Gamma Correction On">
-                  <span class="comp-label on">Gamma Correction ON</span>
+                  <span class="img-comp-label on">Gamma Correction ON</span>
                 </div>
                 <div class="img-comp-img">
                   <!-- Image on the right -->
                   <img src="assets/info_page_media/compare_gamma_correction_off.png" alt="Gamma Correction Off">
-                  <span class="comp-label off">Gamma Correction OFF</span>
+                  <span class="img-comp-label off">Gamma Correction OFF</span>
                 </div>
                 <input type="range" min="0" max="100" value="50" class="img-comp-slider">
                 <div class="slider-handle"></div>
@@ -316,25 +316,25 @@
     </div>
   </div>
 
-  <div id="app-container">
+  <div id="rendering-app-container">
     
-    <div id="canvas-wrapper">
+    <div id="rendering-canvas-wrapper">
       <canvas id="webgl-canvas"></canvas>
       <div id="loading-spinner"></div>
     </div>
 
-    <div id="ui-sidebar">
-      <div class="ui-content">
+    <div id="rendering-ui-sidebar">
+      <div class="rendering-ui-content">
         
         <!-- Added Info Button at the top of controls -->
-        <div class="control-group">
+        <div class="rendering-control-group">
            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
              <h3 style="margin:0; border:none;">Settings</h3>
              <button id="btn-open-info" class="small-btn">About / Info</button>
            </div>
         </div>
 
-        <div class="control-group">
+        <div class="rendering-control-group">
           <h3>Model</h3>
           <select id="model-select" style="margin-bottom: 10px;">
             <option value="assets/models/lion_head_4k/lion_head_4k.gltf">Lion Head</option>
@@ -350,7 +350,7 @@
           <input type="file" id="model-upload" style="display: none;" accept=".glb">
 
           <div style="margin-top: 15px;">
-            <div class="control-row">
+            <div class="rendering-control-row">
               <span>Scale</span>
               <span id="scale-display" style="color:#aaa">1.0</span>
             </div>
@@ -358,7 +358,7 @@
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="rendering-control-group">
           <h3>Environment</h3>
           <select id="env-select" style="margin-bottom: 10px;">
             <option value="assets/hdris/kloppenheim_06_puresky_4k.hdr">Sky 1</option>
@@ -369,69 +369,69 @@
             <option value="assets/hdris/small_cave_4k.hdr">Small Cave</option>
           </select>
 
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-sun">Enable Sun</label>
             <input type="checkbox" id="toggle-sun" checked>
           </div>
 
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label>Intensity</label>
             <input type="range" id="sun-intensity" min="0.1" max="20" step="0.1" value="5.0">
           </div>
 
           <button id="btn-sun-cam" class="action-btn primary-btn" style="margin-top:5px;">Set Sun to View</button>
           
-          <div class="control-row" style="margin-top: 15px;">
+          <div class="rendering-control-row" style="margin-top: 15px;">
             <label for="toggle-env">Env Map</label>
             <input type="checkbox" id="toggle-env" checked>
           </div>
 
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="env-color-picker">Background Color</label>
             <input type="color" id="env-color-picker" value="#222222">
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="rendering-control-group">
           <h3>Renderer</h3>
           <select id="rendering-mode-select" style="margin-bottom: 10px;">
             <option value="RENDERING_MODE_STANDARD">Mode: Standard</option>
             <option value="RENDERING_MODE_DEPTH_SUN">Mode: Sun Depth Map</option>
           </select>
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-ao">Ambient Occlusion</label>
             <input type="checkbox" id="toggle-ao" checked>
           </div>
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-normal">Normal Maps</label>
             <input type="checkbox" id="toggle-normal" checked>
           </div>
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-ibl">IBL</label>
             <input type="checkbox" id="toggle-ibl" checked>
           </div>
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-shadows">Shadows</label>
             <input type="checkbox" id="toggle-shadows" checked>
           </div>
         </div>
 
-        <div class="control-group">
+        <div class="rendering-control-group">
           <h3>Post Processing</h3>
 
           <div style="margin-top: 15px;">
-            <div class="control-row">
+            <div class="rendering-control-row">
               <span>Exposure</span>
               <span id="exposure-display" style="color:#aaa">1.0</span>
             </div>
             <input type="range" style="margin-bottom: 15px" id="exposure-slider" min="0.01" max="2.0" step="0.01" value="1.0">
           </div>
           
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-tone-mapping">Tone Mapping</label>
             <input type="checkbox" id="toggle-tone-mapping" checked>
           </div>
-          <div class="control-row">
+          <div class="rendering-control-row">
             <label for="toggle-gamma-correction">Gamma Correction</label>
             <input type="checkbox" id="toggle-gamma-correction" checked>
           </div>

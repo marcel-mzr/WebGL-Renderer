@@ -10,22 +10,23 @@ body, html {
   color: #e0e0e0;
 }
 
-/* The Main Container */
-#app-container {
+/* The main container that holds the rendering app */
+#rendering-app-container {
   display: flex;
   width: 100vw;
   height: 100vh;
-  flex-direction: row; /* DEFAULT: Side-by-side (PC) */
+  flex-direction: row;
 }
 
-/* The Canvas Area */
-#canvas-wrapper {
+/* A wrapper that wraps the webgl-canvas */
+#rendering-canvas-wrapper {
   flex: 1; /* Takes up all remaining space */
   position: relative;
   background-color: #000;
   overflow: hidden;
 }
 
+/* The canvas where webgl renders to */
 #webgl-canvas {
   display: block;
   width: 100%;
@@ -33,12 +34,12 @@ body, html {
   touch-action: none;
 }
 
-/* The Settings Sidebar */
-#ui-sidebar {
-  width: 320px; /* Fixed width on PC */
+/* The sidebar of the renderer that lets the user interact with the renderer*/
+#rendering-ui-sidebar {
+  width: 320px;
   background-color: #1e1e1e;
   border-left: 1px solid #333;
-  overflow-y: auto; /* Internal scrollbar if controls are too long */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 15px rgba(0,0,0,0.3);
@@ -51,13 +52,14 @@ body, html {
     flex-direction: column; /* SWITCH: Stacked (Phone) */
   }
 
-  #canvas-wrapper {
+  /* A wrapper that wraps the webgl-canvas */
+  #rendering-canvas-wrapper {
     flex: none; /* Stop auto-sizing based on width */
     height: 50vh; /* Canvas takes top 50% of screen */
     width: 100%;
   }
-
-  #ui-sidebar {
+  /* The sidebar of the renderer that lets the user interact with the renderer*/
+  #rendering-ui-sidebar {
     width: 100%; /* Full width */
     height: 50vh; /* Settings take bottom 50% */
     border-left: none;
@@ -66,7 +68,9 @@ body, html {
 }
 
 /* --- 3. UI Component Styling --- */
-.ui-content { padding: 20px; }
+
+/* The content box of the rendering ui */
+.rendering-ui-content { padding: 20px; }
 
 h3 {
   margin-top: 0;
@@ -79,10 +83,11 @@ h3 {
   margin-bottom: 15px;
 }
 
-.control-group { margin-bottom: 25px; }
+/* A group of control elements in a the rendering ui */
+.rendering-control-group { margin-bottom: 25px; }
 
-/* Rows for Label + Input */
-.control-row {
+/* A row in a rendering control group */
+.rendering-control-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -90,7 +95,7 @@ h3 {
   font-size: 14px;
 }
 
-/* Inputs */
+/* Input styling */
 input[type="range"] { width: 100%; margin-top: 5px; accent-color: #4a9eff; cursor: pointer; }
 input[type="checkbox"] { width: 18px; height: 18px; accent-color: #4a9eff; cursor: pointer; }
 select { width: 100%; padding: 8px; background: #2c2c2c; color: white; border: 1px solid #444; border-radius: 4px; }
@@ -113,6 +118,8 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 .primary-btn:hover { background-color: #3587e0; }
 
 /* --- 4. Loading Spinner --- */
+
+/* A centered loading spinner */
 #loading-spinner {
   position: absolute;
   top: 50%; 
@@ -132,11 +139,14 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
+/* utility class to hide html elements */ /* TODO: move to other place */
 .hidden { display: none !important; }
+/* utility class to disable a rendering control row */
 .disabled-row { opacity: 0.4; pointer-events: none; filter: grayscale(100%); }
 
 /* --- 6. Information Overlay Page --- */
 
+/* The overlay page that holds informations about the renderer */
 #info-overlay {
   position: fixed;
   top: 0;
@@ -159,6 +169,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   pointer-events: auto;
 }
 
+/* A container in the info page */
 .info-container {
   background-color: #1e1e1e;
   width: 90%;
@@ -174,8 +185,17 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   transition: transform 0.3s ease;
 }
 
+/* The content inside a info container */
+.info-content {
+  padding: 30px;
+  overflow-y: auto;
+  color: #ccc;
+  line-height: 1.6;
+}
+
 #info-overlay.active .info-container { transform: translateY(0); }
 
+/* A main header in the info page */
 .info-header {
   padding: 20px;
   border-bottom: 1px solid #333;
@@ -198,15 +218,9 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 }
 .icon-btn:hover { color: #fff; }
 
-.info-content {
-  padding: 30px;
-  overflow-y: auto;
-  color: #ccc;
-  line-height: 1.6;
-}
-
 /* --- 8. Info Page Content Typography & Layout --- */
 
+/* A section in the info page */
 .info-section { margin-bottom: 40px; }
 .info-section h2 {
   color: #4a9eff;
@@ -216,6 +230,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   font-size: 1.5rem;
 }
 
+/* A block in a info section */
 .info-block { margin-bottom: 25px; }
 .info-block h3 {
   color: #e0e0e0;
@@ -228,6 +243,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 }
 .info-block p { margin-top: 0; margin-bottom: 15px; color: #aaa; }
 
+/* A box to show notes in a info block */
 .note-box {
   background: rgba(74, 158, 255, 0.1);
   border-left: 4px solid #4a9eff;
@@ -238,13 +254,14 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   font-size: 0.9rem;
 }
 
-/* Media Containers */
+/* A container containing media in form of pictures and videos*/
 .media-container {
   margin-top: 20px;
   margin-bottom: 30px;
 }
 .media-container h4 { margin: 0 0 10px 0; color: #888; font-size: 0.9rem; text-transform: uppercase; }
 
+/* Styling of a video in the info page */
 .info-video {
   width: 100%;
   max-width: 100%;
@@ -256,6 +273,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 
 /* --- 9. Image Comparison Slider Styles --- */
 
+/* A widget for comparing 2 pictures in the info page */
 .img-comparision-widget {
   margin: 30px 0;
   padding: 20px;
@@ -264,6 +282,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 }
 .img-comparision-widget h4 { margin-top: 0; color: #fff; margin-bottom: 15px; }
 
+/* The container containing the 2 images to compare in the img-comparision-widget */
 .img-comp-container {
   position: relative;
   height: 300px; /* Fixed height for demo */
@@ -273,6 +292,7 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   border: 1px solid #444;
 }
 
+/* A wrapper for the image in the im-comp-container */
 .img-comp-img {
   position: absolute;
   width: 100%;
@@ -288,8 +308,8 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
 }
 
 
-/* Labels on images */
-.comp-label {
+/* A label for an image in the img-comp-container */
+.img-comp-label {
   position: absolute;
   top: 10px;
   padding: 4px 8px;
@@ -299,9 +319,10 @@ input[type="color"] { background: none; border: none; height: 30px; width: 40px;
   border-radius: 4px;
   font-weight: bold;
 }
-.comp-label.on { left: 10px; }
-.comp-label.off { right: 10px; }
+.img-comp-label.on { left: 10px; }
+.img-comp-label.off { right: 10px; }
 
+/* The left sided overlay image in the img-comp-container */
 .img-comp-overlay {
   z-index: 1; /* Forces this image to sit on top of the 'OFF' image */
 }
