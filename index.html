@@ -123,7 +123,7 @@
             <h3>Normal Mapping</h3>
             <p>
               Normal mapping is a technique that alters the surface normal on a texture basis, altering light Interaction
-              properties even on gemetrically flat sufaces.
+              properties even on geometrically flat sufaces.
             </p>
             <p>
               Using normal mapping can create details in models without changing the complexity of the mesh's geometry thereby
@@ -152,7 +152,7 @@
           <div class="info-block">
             <h3>Image Based Lighting</h3>
             <p>
-              Image based lighting is a rendering technique that uses the color information of a hdr image to calculate
+              Image based lighting is a rendering technique that uses the color information of an hdr image to calculate
               the light interaction on the models surface.
             </p>
             <p>
@@ -185,7 +185,7 @@
           <div class="info-block">
             <h3>Shadows</h3>
             <p>
-              Shadows produced through a technique called shadow mapping.
+              Shadows are produced through a technique called shadow mapping.
               A orthographic projection of the model from the sun's view is rendererd into a depth map texture.
               When calculating lighting, this texture is then read out and used to compare the depth of the texture
               with the actual depth of the fragment (pixel you can see).
@@ -217,10 +217,13 @@
             </div>
             <div class="note-box">
               <strong>Note:</strong> 
-              By using this technique you get a shadow that is rather cheap to calculate.
+              By using this technique you get a shadow that are rather cheap to calculate.
               The shadow quality on the other hand is dependent on the texture quality of the depth map, which is why
-              the shadow looks pixalated.
-              Also, this implementation of shadow mapping does not support soft shadows.
+              the shadow might look pixalated.
+            </div>
+            <div class="note-box">
+              <strong>Note:</strong> 
+              This implementation of shadow mapping does not support soft shadows.
             </div>
           </div>
 
@@ -231,7 +234,7 @@
           <h2>Post Processing</h2>
           <p>
             Post processing is the last step of the rendering pipeline.
-            When an frame is rendered it is stored in a texture and then altered by the post processing stage.
+            When a frame is rendered, it is stored in a texture and then altered by the post processing stage.
           </p>
           <div class="info-block">
             <h3>Exposure</h3>
@@ -287,16 +290,17 @@
             <h3>Gamma Correction</h3>
             <p>
               Images are often times stored in SRGB space. This is a color space where colors are not linearly stored and rather adjusted by
-              a gamma value. This is done because smaller (darker) floating point numbers are not very precise near zero.
-              If an image would get stored linearly, darker colors would get rounded to the next best number resulting in a visual banding effect.
+              a gamma value. This is done because human vison is much more sensitive to changes in dark tones (Weber Fechner Law).
+              Storing them linearly in 8 bit integers per color channel would result in loss in precision in the darker colors that would then
+              result in visual banding effects.
             </p>
             <p>
-              In reality, monitors are calibrated to respond to a gamma curve. So when outputing a color on the monitor it takes the SRGB image
-              and outputs a linear signal. Therefore the banding effect does not happen.
+              In reality, monitors are also calibrated to have a non linear gamma response. So when the monitor receives the SRGB image,
+              its physical behavior "decodes" the signal and emits linear light, resulting in a correct looking image for our eyes.
             </p>
             <p>
-              Gamma correction is now exactly the process of converting linear color space lighting calculations into for example SRGB space
-              such that a monitor recorrects it to be output linearly.
+              Therefore, when rendering we convert input textures from SRGB to linear color space, do light calculations, and convert back
+              to SRGB space before the image is displayed on the monitor.
             </p>
 
             <div class="img-comparision-widget">

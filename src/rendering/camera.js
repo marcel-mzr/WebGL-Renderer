@@ -73,7 +73,6 @@ export class Camera {
     this.maxDistance = 100.0;
 
 
-
     this.updateCameraParameters(this.azimuth, this.zenith, this.distance);
     this.registerCallbacks();
 
@@ -94,8 +93,6 @@ export class Camera {
    * @param {number} distance - The distance to the cameras taget
    */
   updateCameraParameters(azimuth, zenith, distance) {
-
-
     // (Re-)calculate camera position
     vec3.set(this.cameraPosition, 
       this.cameraTarget[0] + distance * Math.sin(zenith) * Math.cos(azimuth),
