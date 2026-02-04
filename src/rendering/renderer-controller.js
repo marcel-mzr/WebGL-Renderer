@@ -2,7 +2,7 @@ import { Renderer, RENDERING_MODE_DEPTH_SUN, RENDERING_MODE_STANDARD } from "./r
 import { hexToRGBVec } from "./utils";
 
 /**
- * Acts as a interface between the controll block in the website and the Renderer.
+ * Acts as a interface between the control block in the website and the Renderer.
  */
 export class RendererController {
 
@@ -13,6 +13,10 @@ export class RendererController {
    */
   constructor(renderer) {
     this.renderer = renderer;
+
+    // Queue of async tasks that need to be processed
+    this.asyncTaskQueue = [];
+    this.isProcessingAsyncTask = false;
 
     // Used to clear the memory of the old model if selected model changes
     this.activeModelURL = null
@@ -72,12 +76,12 @@ export class RendererController {
     window.addEventListener("resize", () => this.onCanvasResize());
 
     // Model Controls
-    this.modelSelector.addEventListener("change", async () => this.onModelSelect());
+    this.modelSelector.addEventListener("change", () => this.onModelSelect());
     this.scaleSlider.addEventListener("input", () => this.onModelScale());
-    this.modelUpload.addEventListener("change", async () => this.onModelUpload());
+    this.modelUpload.addEventListener("change", () => this.onModelUpload());
 
     // Environment Controls
-    this.envSelector.addEventListener("change", async () => this.onEnvSelect());
+    this.envSelector.addEventListener("change", () => this.onEnvSelect());
     this.sunToggle.addEventListener("click", () => this.onSunToggle());
     this.sunIntensitySlider.addEventListener("input", () => this.onSunIntensityChange());
     this.sunToViewButton.addEventListener("click", () => this.onSunDirectionChangeClick());
@@ -96,6 +100,40 @@ export class RendererController {
     this.toneMappingToggle.addEventListener("click", () => this.onToneMappingToggle());
     this.gammaCorrectionToggle.addEventListener("click", () => this.onGammaCorrectionToggle());
   }
+
+  /**
+   * Adds a task to the async task queue and tries to process it
+   * @param {Function} task - The async task to process
+   */
+  enqueueAsyncTask(task) {
+    this.asyncTaskQueue.push(task);
+    this.processAsyncTaskQueue();
+  }
+
+  /**
+   * Processes the async task queue until it is empty
+   */
+  async processAsyncTaskQueue() {
+    // Check if the queue can be processed
+    if (this.isProcessingAsyncTask || this.asyncTaskQueue.length === 0) return;
+    
+    this.isProcessing = true;
+    const task = this.asyncTaskQueue.shift();
+
+    try {
+      await task();
+    }
+    catch (error) {
+      console.error("Error occured while processing async render controler task:", error);
+      this.setLoadingSpinnerSpinning(false);
+    }
+    finally {
+      this.isProcessing = false;
+      this.processAsyncTaskQueue();
+    }
+
+  }
+
 
   /**
    * Enables/Disables the loading spinner
@@ -125,31 +163,37 @@ export class RendererController {
     }
   }
 
-  async onModelSelect() {
+  onModelSelect() {
     const modelPath = this.modelSelector.value;
-    this.setLoadingSpinnerSpinning(true);
-    await this.renderer.loadModelByPath(modelPath);
-    this.setLoadingSpinnerSpinning(false);
 
-    this.onModelScale();
+    this.enqueueAsyncTask(async () => {
+      this.setLoadingSpinnerSpinning(true);
+      await this.renderer.loadModelByPath(modelPath);
+      this.setLoadingSpinnerSpinning(false);
+
+      this.onModelScale();
+    });
   }
 
-  async onModelUpload() {
+  onModelUpload() {
     const modelFile = this.modelUpload.files[0];
     if (!modelFile) return;
-    // Clean up old model
-    if (this.activeModelURL) {
-      URL.revokeObjectURL(this.activeModelURL);
-      this.activeModelURL = null;
-    }
 
-    this.modelSelector.value = "Custom Model";
-    this.activeModelURL = URL.createObjectURL(modelFile);
-    this.setLoadingSpinnerSpinning(true);
-    await this.renderer.loadModelByPath(this.activeModelURL);
-    this.setLoadingSpinnerSpinning(false);
-    
-    this.onModelScale();
+    this.enqueueAsyncTask(async () => {
+      // Clean up old model
+      if (this.activeModelURL) {
+        URL.revokeObjectURL(this.activeModelURL);
+        this.activeModelURL = null;
+      }
+
+      this.modelSelector.value = "Custom Model";
+      this.activeModelURL = URL.createObjectURL(modelFile);
+      this.setLoadingSpinnerSpinning(true);
+      await this.renderer.loadModelByPath(this.activeModelURL);
+      this.setLoadingSpinnerSpinning(false);
+      
+      this.onModelScale();
+    });
   }
 
   onModelScale() {
@@ -159,11 +203,14 @@ export class RendererController {
     this.scaleDisplay.innerText = scaleValue;
   }
 
-  async onEnvSelect() {
+  onEnvSelect() {
     const envPath = this.envSelector.value;
-    this.setLoadingSpinnerSpinning(true);
-    await this.renderer.loadEnvByPath(envPath);
-    this.setLoadingSpinnerSpinning(false);
+
+    this.enqueueAsyncTask(async () => {
+      this.setLoadingSpinnerSpinning(true);
+      await this.renderer.loadEnvByPath(envPath);
+      this.setLoadingSpinnerSpinning(false);
+    });
   }
 
   onSunToggle() {
