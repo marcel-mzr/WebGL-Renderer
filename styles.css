@@ -49,7 +49,8 @@ body, html {
 #rendering-app-container {
   display: flex;
   width: 100vw;
-  height: 100vh;
+  height: 100vh; /* For older devices */
+  height: 100dvh;
   flex-direction: row;
 }
 
