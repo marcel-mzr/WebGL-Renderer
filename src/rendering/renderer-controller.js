@@ -134,7 +134,6 @@ export class RendererController {
 
   }
 
-
   /**
    * Enables/Disables the loading spinner
    * @param {boolean} shouldSpin - The bool that signals whether to enable (true) or disable (false)

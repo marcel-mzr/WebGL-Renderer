@@ -18,7 +18,7 @@ export class HDRCubeMap {
     this.ENV_CUBEMAP_WIDTH = 1024; // TODO: maybe change to something lower
     this.IRRADIANCE_CUBEMAP_WIDTH = 32;
     this.PREFILTERED_CUBEMAP_WIDTH = 512;
-    this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 9;
+    this.PREFILTERED_CUBEMAP_MIPMAP_LEVELS = 10;
     this.BRDF_LUT_TEXTURE_WIDTH = 512;
 
     this.gl = gl;
