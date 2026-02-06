@@ -1,4 +1,3 @@
-// Handle opening and closing of the info overlay
 const infoOverlay = document.getElementById('info-overlay');
 const openInfoButton = document.getElementById('btn-open-info');
 const closeInfoButton = document.getElementById('btn-close-info');
@@ -9,7 +8,7 @@ infoOverlay.addEventListener('click', (e) => {
   if(e.target === infoOverlay) infoOverlay.classList.remove('active');
 });
 
-// Image comparision widget logic
+// Add image comparision widget logic
 document.addEventListener('DOMContentLoaded', () => {
   const compWidgets = document.querySelectorAll('.img-comparision-widget');
 
