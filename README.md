@@ -13,5 +13,5 @@ reading through the very insightful free online book https://learnopengl.com/ by
 # Compilation and Running (Tested for Windows)
 1. Make sure you have NodeJS installed. If not download it at https://nodejs.org/en/download
 2. At the root of the project run `npm update`
-3. **Running**: run `vite run dev`
-4. **Building**: run `vite run build`
+3. **Running**: run `npm run dev`
+4. **Building**: run `npm run build`
